@@ -1,33 +1,38 @@
-import pygame
-import math
+import pygame, sys, math
+from pygame.locals import *
+
 center = (150, 150)
 
 class Ball:
-    def __init__(self, x_pos, y_pos, radius, color, mass, retention, y_speed, x_speed, id):
-        self.x_pos = x_pos
-        self.y_pos = y_pos
-        self.radius = radius
+    def __init__(self, x_pos, y_pos, radius, color, mass=1, restitution=0.9, x_speed=0, y_speed=0, gravity=0.5):
+        self.x = float(x_pos)
+        self.y = float(y_pos)
+        self.r = radius
         self.color = color
         self.mass = mass
-        self.retention = retention
-        self.y_speed = y_speed
-        self.x_speed = x_speed
-        self.id = id
-        self.circle = ''
+        self.rest = restitution
+        self.vx = x_speed
+        self.vy = y_speed
+        self.g = gravity
 
-    def move(self, dx, dy):
-        self.x += dx
-        self.y += dy
+    def apply_gravity(self):
+        self.vy += self.g  # accélère la vitesse verticale
+
+    def move(self):
+        self.x += self.vx
+        self.y += self.vy
+
+    def check_collision_circle(self, center, radius):
+        dx = self.x - center[0]
+        dy = self.y - center[1]
+        dist = math.hypot(dx, dy)
+        if abs(dist - radius) <= self.r:
+            # vecteur normal
+            nx, ny = dx/dist, dy/dist
+            dot = self.vx*nx + self.vy*ny
+            # réflexion amortie
+            self.vx -= 2 * dot * nx * self.rest
+            self.vy -= 2 * dot * ny * self.rest
 
     def draw(self, surface):
-        self.circle = pygame.draw.circle(surface, self.color, (self.x_pos, self.y_pos), self.radius)
-    
-    def check_gravity(self,dist_center_floor):
-        dx = self.x_pos - center[0]
-        dy = self.y_pos - center[1]
-        dist = math.sqrt(dx*dx + dy*dy)
-        if abs(self.y_pos - dist_center_floor) <= self.radius:
-            self.x_speed+=-1*self.x_speed*self.retention
-            self.y_speed+=-1*self.y_speed*self.retention
-        else:
-            self.y_speed+=9.81*self.mass
+        pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.r)
