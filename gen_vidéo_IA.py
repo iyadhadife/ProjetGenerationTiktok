@@ -4,7 +4,7 @@ from Ball import Ball
 
 # Initialiser Pygame
 pygame.init()
-screen = pygame.display.set_mode((300, 300))
+screen = pygame.display.set_mode((600, 600))
 clock = pygame.time.Clock()
 
 # Lecture audio
@@ -12,11 +12,11 @@ audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
 pygame.mixer.music.load(audio_path)
 pygame.mixer.music.play()
 
-nb_cercles = 1
+nb_cercles = 2
 rayon_step = 150
-center = (150, 150)
+center = (300, 300)
 
-ball = Ball(150, 150, radius=5, color=(255, 0, 0), restitution=0.9, x_speed=1, y_speed=1, gravity=0.5)
+ball = Ball(300, 300, radius=5, color=(255, 0, 0), restitution=0.95, x_speed=1, y_speed=1, gravity=0.5)
 
 while True:
     for e in pygame.event.get():
@@ -26,7 +26,6 @@ while True:
 
     screen.fill((0, 0, 0))
 
-    # Appliquer gravité et mouvement
     ball.apply_gravity()
     ball.move()
 
@@ -39,4 +38,4 @@ while True:
     ball.draw(screen)
 
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(300)
