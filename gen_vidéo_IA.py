@@ -1,6 +1,7 @@
 import pygame, sys, math
 from pygame.locals import *
 from Ball import Ball
+from Wall import Wall
 
 # Initialiser Pygame
 pygame.init()
@@ -17,7 +18,7 @@ rayon_step = 150
 center = (300, 300)
 
 ball = Ball(300, 300, radius=5, color=(255, 0, 0), restitution=0.95, x_speed=1, y_speed=1, gravity=0.5)
-
+walls = [Wall(300, 300, radius=150)]
 while True:
     for e in pygame.event.get():
         if e.type == QUIT:
