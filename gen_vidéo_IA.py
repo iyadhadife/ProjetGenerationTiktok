@@ -1,6 +1,6 @@
 import pygame, sys, math
 from pygame.locals import *
-
+from Ball import Ball
 # Initialiser Pygame
 pygame.init()
 screen = pygame.display.set_mode((800, 800))
@@ -17,7 +17,7 @@ rayon_step = 5
 center = (400, 400)
 
 # Balle
-ball = {"x": 400, "y": 200, "vx": 3, "vy": 2, "r": 8}
+ball = Ball(0, 0, 5, (255, 0, 0), 1, 0.9, 1, 0.5, 1)
 
 while True:
     screen.fill((0, 0, 0))
@@ -27,30 +27,15 @@ while True:
         rayon = (i+1) * rayon_step
         pygame.draw.circle(screen, (0, 100, 255), center, rayon, 1)
 
-    # Déplacer la balle
-    ball["x"] += ball["vx"]
-    ball["y"] += ball["vy"]
-
-    # Calcul de la distance du centre
-    dx = ball["x"] - center[0]
-    dy = ball["y"] - center[1]
-    dist = math.sqrt(dx*dx + dy*dy)
-
     # Vérifier collision avec les parois
     for i in range(nb_cercles):
         rayon = (i+1) * rayon_step
-        if abs(dist - rayon) <= ball["r"]:  # collision détectée
-            # Vecteur normal (centre → balle)
-            nx, ny = dx/dist, dy/dist
-            # Projection de la vitesse sur la normale
-            dot = ball["vx"]*nx + ball["vy"]*ny
-            # Réflexion
-            ball["vx"] -= 2*dot*nx
-            ball["vy"] -= 2*dot*ny
+        if ball.check_gravity(rayon):
+            ball.move(ball.x_speed, ball.y_speed)
             break
 
     # Dessiner la balle
-    pygame.draw.circle(screen, (255, 0, 0), (int(ball["x"]), int(ball["y"])), ball["r"])
+    ball.draw(screen)
 
     # Gestion événements
     for ev in pygame.event.get():
