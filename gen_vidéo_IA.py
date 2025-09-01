@@ -18,7 +18,8 @@ rayon_step = 150
 center = (300, 300)
 
 ball = Ball(300, 300, radius=5, color=(255, 0, 0), restitution=0.95, x_speed=1, y_speed=1, gravity=0.5)
-walls = [Wall(300, 300, radius=150)]
+walls = [Wall(300, 300, radius=(i + 1) * rayon_step) for i in range(nb_cercles)]
+
 while True:
     for e in pygame.event.get():
         if e.type == QUIT:
@@ -31,10 +32,10 @@ while True:
     ball.move()
 
     # Collision avec chaque cercle
-    for i in range(nb_cercles):
-        rayon = (i + 1) * rayon_step
-        ball.check_collision_circle(center, rayon)
-        pygame.draw.circle(screen, (0, 100, 255), center, rayon, 1)
+    for wall in walls:
+        ball.check_collision_circle(center, wall.rayon)
+        wall.ball_collision(ball)
+        wall.draw(screen)
 
     ball.draw(screen)
 
