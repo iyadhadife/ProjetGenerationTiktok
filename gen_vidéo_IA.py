@@ -3,7 +3,7 @@ from pygame.locals import *
 from Ball import Ball
 # Initialiser Pygame
 pygame.init()
-screen = pygame.display.set_mode((800, 800))
+screen = pygame.display.set_mode((300, 300))
 clock = pygame.time.Clock()
 
 # Lecture audio
@@ -12,12 +12,12 @@ pygame.mixer.music.load(audio_path)
 pygame.mixer.music.play()
 
 # Paramètres cercles
-nb_cercles = 200
-rayon_step = 5
-center = (400, 400)
+nb_cercles = 5
+rayon_step = 20
+center = (150, 150)
 
 # Balle
-ball = Ball(0, 0, 5, (255, 0, 0), 1, 0.9, 1, 0.5, 1)
+ball = Ball(150, 150, 5, (255, 0, 0), 1, 0.9, 1, 0.5, 1)
 
 while True:
     screen.fill((0, 0, 0))

@@ -1,6 +1,6 @@
 import pygame
 import math
-center = (0,0)
+center = (150, 150)
 
 class Ball:
     def __init__(self, x_pos, y_pos, radius, color, mass, retention, y_speed, x_speed, id):
