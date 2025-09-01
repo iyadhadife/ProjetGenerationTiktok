@@ -2,9 +2,15 @@ import pygame, sys, math
 from pygame.locals import *
 from Ball import Ball
 
+# Initialiser Pygame
 pygame.init()
 screen = pygame.display.set_mode((300, 300))
 clock = pygame.time.Clock()
+
+# Lecture audio
+audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
+pygame.mixer.music.load(audio_path)
+pygame.mixer.music.play()
 
 nb_cercles = 1
 rayon_step = 150
