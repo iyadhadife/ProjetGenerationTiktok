@@ -31,9 +31,18 @@ class Ball:
         if dist + self.r < radius:
             self.apply_gravity()
         else:
+            self.x = center[0] + (dx / dist) * (radius - self.r)
+            self.y = center[1] + (dy / dist) * (radius - self.r)
             if math.fabs(self.vy) > BOUNCESTOP:
                 self.vx = self.vx*-1*self.rest
                 self.vy = self.vy*-1*self.rest
+                if math.fabs(self.vy) > 0.5:
+                    if self.vy > 0:
+                        self.vy += random.uniform(0.1,0.2)
+                        self.vx += random.uniform(0.1,0.2)
+                    if self.vy < 0:
+                        self.vy -= random.uniform(0.1,0.2)
+                        self.vx -= random.uniform(0.1,0.2)
             else:
                 self.vy = 0
                 self.vx = 0
