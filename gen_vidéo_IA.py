@@ -3,8 +3,9 @@ from pygame.locals import *
 from Ball import Ball
 from Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
-ips = 60
+import random
 
+ips = 60
 try:
     # Initialiser Pygame
     pygame.init()
@@ -18,13 +19,13 @@ try:
     pygame.mixer.music.load(audio_path)
     pygame.mixer.music.play()
 
-    nb_cercles = 1
+    nb_cercles = 3
     rayon_step = 50
     center = (300, 300)
     start_angle = 0            
-    end_angle = math.pi * 1.5
-    ball = Ball(center[0], center[1], radius=5, color=(255, 0, 0), restitution=0.8, x_speed=4, y_speed=5, mass=0.1)
-    walls = [ArcWall(center[0], center[1], radius=(i + 1) * rayon_step, id=i, start_angle=start_angle, end_angle=end_angle) for i in range(nb_cercles)]
+    end_angle = math.pi * 1.8
+    ball = Ball(center[0], center[1], radius=5, color=(255, 0, 0), restitution=0.8, x_speed=2, y_speed=3, mass=0.1)
+    walls = [ArcWall(center[0], center[1], radius=(i + 1) * rayon_step, id=i, start_angle=math.pi*random.uniform(0,0.5), end_angle=math.pi*random.uniform(1.5,2)) for i in range(nb_cercles)]
     walls = sorted(walls, key=lambda w: w.area_of_wall())
 
     while True:
@@ -36,17 +37,23 @@ try:
         screen.fill((0, 0, 0))
         deplacement = False
         # Collision avec chaque cercle
-        for wall in walls:
+        for num, wall in enumerate(walls):
+            if num == 0:
+                destroy = ball.check_collision_and_gravity_on_circles(wall)
+                if destroy:
+                    walls.remove(wall)
             wall.draw(screen)
-            destroy = ball.check_collision_and_gravity_on_circles(wall)
-            # if destroy:
-            #     walls.remove(wall)
+
+        #Rotation des murs
+        for wall in walls:
+            wall.start_angle += 0.01
+            wall.end_angle += 0.01
 
         ball.move()
         ball.draw(screen)
 
         pygame.display.flip()
-        clock.tick(60)
+        clock.tick(ips)
 finally:
     recorder.stop_rec()
     recorder.save_recording(r"C:\Users\ihadi\Desktop\VideoResultTikTok\my_simulation.mp4")
