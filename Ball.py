@@ -28,14 +28,18 @@ class Ball:
         if wall.in_the_wall(self):
             self.apply_gravity()
         else:
-            wall.Correct_ball_position(self)
-            if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
-                self.vx = self.vx*-1*self.rest
-                self.vy = self.vy*-1*self.rest
-                self.rest = math.fabs(random.normalvariate(1,1))
+            if wall.point_in_arc(self)==False:
+                self.apply_gravity()
+                return True
             else:
-                self.vy = 0
-                self.vx = 0
+                wall.Correct_ball_position(self)
+                if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
+                    self.vx = self.vx*-1*self.rest
+                    self.vy = self.vy*-1*self.rest
+                    self.rest = math.fabs(random.normalvariate(1,1))
+                else:
+                    self.vy = 0
+                    self.vx = 0
         
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.r)
