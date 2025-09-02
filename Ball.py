@@ -23,26 +23,16 @@ class Ball:
         self.x += self.vx
         self.y += self.vy
 
-    def check_collision_and_gravity_on_circles(self, center, radius):
-        BOUNCESTOP = 0.001
-        dx = self.x - center[0]
-        dy = self.y - center[1]
-        dist = math.hypot(dx, dy)
-        if dist + self.r < radius:
+    def check_collision_and_gravity_on_circles(self, wall):
+        BOUNCESTOP = 0.1
+        if wall.in_the_wall(self):
             self.apply_gravity()
         else:
-            self.x = center[0] + (dx / dist) * (radius - self.r)
-            self.y = center[1] + (dy / dist) * (radius - self.r)
-            if math.fabs(self.vy) > BOUNCESTOP:
+            wall.Correct_ball_position(self)
+            if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
                 self.vx = self.vx*-1*self.rest
                 self.vy = self.vy*-1*self.rest
-                if math.fabs(self.vy) > 0.5:
-                    if self.vy > 0:
-                        self.vy += random.uniform(0.1,0.2)
-                        self.vx += random.uniform(0.1,0.2)
-                    if self.vy < 0:
-                        self.vy -= random.uniform(0.1,0.2)
-                        self.vx -= random.uniform(0.1,0.2)
+                self.rest = math.fabs(random.normalvariate(1,1))
             else:
                 self.vy = 0
                 self.vx = 0
