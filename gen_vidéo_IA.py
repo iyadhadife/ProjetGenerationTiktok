@@ -13,12 +13,12 @@ audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
 pygame.mixer.music.load(audio_path)
 pygame.mixer.music.play()
 
-nb_cercles = 2
+nb_cercles = 1
 rayon_step = 150
 center = (300, 300)
 
-ball = Ball(300, 300, radius=5, color=(255, 0, 0), restitution=0.95, x_speed=1, y_speed=1, gravity=0.5)
-walls = [Wall(300, 300, radius=(i + 1) * rayon_step) for i in range(nb_cercles)]
+ball = Ball(center[0], center[1], radius=5, color=(255, 0, 0), restitution=0.9, x_speed=3, y_speed=2, mass=2)
+walls = [Wall(center[0], center[1], radius=(i + 1) * rayon_step) for i in range(nb_cercles)]
 
 while True:
     for e in pygame.event.get():
@@ -28,16 +28,14 @@ while True:
 
     screen.fill((0, 0, 0))
 
-    ball.apply_gravity()
     ball.move()
 
     # Collision avec chaque cercle
     for wall in walls:
-        ball.check_collision_circle(center, wall.rayon)
-        wall.ball_collision(ball)
+        ball.check_collision_and_gravity_on_circles(center, wall.radius)
         wall.draw(screen)
 
     ball.draw(screen)
 
     pygame.display.flip()
-    clock.tick(300)
+    clock.tick(5)

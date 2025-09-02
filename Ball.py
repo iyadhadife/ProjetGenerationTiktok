@@ -2,10 +2,10 @@ import pygame, sys, math
 from pygame.locals import *
 import random 
 
-center = (150, 150)
+center = (300, 300)
 
 class Ball:
-    def __init__(self, x_pos, y_pos, radius, color, mass=1, restitution=0.9, x_speed=0, y_speed=0, gravity=0.5):
+    def __init__(self, x_pos, y_pos, radius, color, mass=1, restitution=0.5, x_speed=0, y_speed=0, gravity=0.81):
         self.x = float(x_pos)
         self.y = float(y_pos)
         self.r = radius
@@ -23,23 +23,20 @@ class Ball:
         self.x += self.vx
         self.y += self.vy
 
-    def check_collision_circle(self, center, radius):
-        BOUNCESTOP = 0.1
+    def check_collision_and_gravity_on_circles(self, center, radius):
+        BOUNCESTOP = 0.001
         dx = self.x - center[0]
         dy = self.y - center[1]
         dist = math.hypot(dx, dy)
-        if dist + self.r > radius:
-            # vecteur normal
-            nx, ny = dx / dist, dy / dist
-            dot = self.vx * nx + self.vy * ny
-            # réflexion amortie
-            self.vx -= 2 * dot * nx * self.rest
-            self.vy -= 2 * dot * ny * self.rest
+        if dist + self.r < radius:
+            self.apply_gravity()
         else:
-            if self.vy > BOUNCESTOP:
+            if math.fabs(self.vy) > BOUNCESTOP:
+                self.vx = self.vx*-1*self.rest
                 self.vy = self.vy*-1*self.rest
             else:
                 self.vy = 0
+                self.vx = 0
         
     def draw(self, surface):
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.r)
