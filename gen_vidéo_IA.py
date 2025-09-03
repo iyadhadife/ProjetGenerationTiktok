@@ -4,8 +4,13 @@ from Ball import Ball
 from Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
 import random
+from music_highlight import onsets_frames, velocity_ball
+import time
 
+audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
+highlights = onsets_frames(audio_path=audio_path)
 ips = 60
+
 try:
     # Initialiser Pygame and Pygame recorder
     pygame.init()
@@ -13,11 +18,6 @@ try:
     clock = pygame.time.Clock()
     recorder = ScreenRecorder(ips)  # FPS souhaité
     recorder.start_rec()
-
-    # Audio
-    audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
-    pygame.mixer.music.load(audio_path)
-    pygame.mixer.music.play()
 
     #Starting Parameters
     nb_cercles = 10
@@ -34,23 +34,30 @@ try:
         walls.append(ArcWall(center[0], center[1], radius=(i + 1) * rayon_step, id=i, start_angle=start_angle+start_point, end_angle=end_angle+start_point))
     walls = sorted(walls, key=lambda w: w.area_of_wall())
 
+    start_time = time.time()
+    onset_index = 0
+
+    # Audio
+    pygame.mixer.music.load(audio_path)
+    pygame.mixer.music.play()
+    
     # Main loop
     while True:
         for e in pygame.event.get():
             if e.type == QUIT:
                 pygame.quit()
                 sys.exit()
-
+        
         screen.fill((0, 0, 0))
         deplacement = False
-
         # Collision on each arcs
         for num, wall in enumerate(walls):
+            wall.draw(screen)
             if num == 0:
                 destroy = ball.check_collision_and_gravity_on_circles(wall)
+                highlights = velocity_ball(highlights, time.time(), ball, wall)
                 if destroy:
                     walls.remove(wall)
-            wall.draw(screen)
 
         # Walls rotation
         for wall in walls:

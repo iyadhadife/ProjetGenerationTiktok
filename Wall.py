@@ -92,10 +92,7 @@ class ArcWall(Wall):
         angle = (2*math.pi - math.atan2(dy, dx) ) % (2*math.pi)
         angle_start = self.start_angle % (2*math.pi)
         angle_end = self.end_angle % (2*math.pi)
-        # print('Angles en radians:')
-        # print(angle)
-        # print(angle_start)
-        # print(angle_end)
+
         # 3. Vérif si dans l'arc
         # Calcul de la différence relative modulo 2π
         diff_total = (angle_end - angle_start) % (2*math.pi)
@@ -103,5 +100,6 @@ class ArcWall(Wall):
         
         # theta est dans l’arc si sa position relative <= longueur de l’arc
         return diff_theta <= diff_total
+    
     def area_of_wall(self):
         return math.pi * (self.radius ** 2)
