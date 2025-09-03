@@ -2,8 +2,6 @@ import pygame, sys, math
 from pygame.locals import *
 import random 
 
-center = (300, 300)
-
 class Ball:
     def __init__(self, x_pos, y_pos, radius, color, mass=1, restitution=0.5, x_speed=0, y_speed=0, gravity=0.81):
         self.x = float(x_pos)

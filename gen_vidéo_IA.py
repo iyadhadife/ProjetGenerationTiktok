@@ -15,16 +15,17 @@ try:
     # Initialiser Pygame and Pygame recorder
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
-    screen = pygame.display.set_mode((600, 600))
+    screen = pygame.display.set_mode((1080, 1920))
     clock = pygame.time.Clock()
     recorder = ScreenRecorder(ips)  # FPS souhaité
     recorder.start_rec()
 
     #Starting Parameters
     nb_cercles = 15
-    rayon_step = 22
-    center = (300, 300)
-    start_angle = 0            
+    radius_step = 20
+    starting_radius = 20
+    center = (540, 960)
+    start_angle = 0
     end_angle = math.pi * 1.8
 
     #Creating Objects
@@ -32,10 +33,10 @@ try:
     walls = []
     start_point = random.uniform(math.pi,math.pi*2)
     for i in range(nb_cercles):
-        walls.append(ArcWall(center[0], center[1], radius=(i + 1) * rayon_step, id=i, start_angle=start_angle+start_point, end_angle=end_angle+start_point))
+        walls.append(ArcWall(center[0], center[1], radius=starting_radius+(i + 1) * radius_step, id=i, start_angle=start_angle+start_point, end_angle=end_angle+start_point))
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     onset_index = 0
-    rot = [0.005*math.log(num+1) for num, i in enumerate(walls)]
+    rot = [0.005*math.log(num+2) for num, i in enumerate(walls)]
 
     # Audio
     pygame.mixer.music.load(audio_path)
