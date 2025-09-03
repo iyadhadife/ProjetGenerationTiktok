@@ -51,70 +51,70 @@ def velocity_ball(highlight: np.ndarray, now: float, ball: Ball, wall: Wall, ips
     highlight = np.delete(highlight, 0)
     return highlight
 
-# highlights = onsets_frames()
-# # Initialiser Pygame
-# pygame.init()
+highlights = onsets_frames()
+# Initialiser Pygame
+pygame.init()
 
-# # Paramètres de la fenêtre
-# screen = pygame.display.set_mode((800, 600))
-# pygame.display.set_caption('Balle Rebonds')
+# Paramètres de la fenêtre
+screen = pygame.display.set_mode((800, 600))
+pygame.display.set_caption('Balle Rebonds')
 
-# # Audio
-# audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
-# pygame.mixer.music.load(audio_path)
-# pygame.mixer.music.play()
-# # Couleurs
-# WHITE = (255, 255, 255)
-# GREEN = (0, 255, 0)
+# Audio
+audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
+pygame.mixer.music.load(audio_path)
+pygame.mixer.music.play()
+# Couleurs
+WHITE = (255, 255, 255)
+GREEN = (0, 255, 0)
 
-# # Paramètres de la balle
-# ball_radius = 20
-# ball_pos = [400, 300]
-# ball_velocity = 0
+# Paramètres de la balle
+ball_radius = 20
+ball_pos = [400, 300]
+ball_velocity = 0
 
-# # Fréquence de mise à jour
-# clock = pygame.time.Clock()
+# Fréquence de mise à jour
+clock = pygame.time.Clock()
 
-# # Fonction pour dessiner la balle
-# def draw_ball():
-#     pygame.draw.circle(screen, GREEN, ball_pos, ball_radius)
+# Fonction pour dessiner la balle
+def draw_ball():
+    pygame.draw.circle(screen, GREEN, ball_pos, ball_radius)
 
-# # Fonction pour faire rebondir la balle
-# def bounce_ball():
-#     global ball_pos, ball_velocity
-#     ball_velocity = -15  # Vitesse initiale vers le haut
+# Fonction pour faire rebondir la balle
+def bounce_ball():
+    global ball_pos, ball_velocity
+    ball_velocity = -15  # Vitesse initiale vers le haut
 
-# # Boucle principale
-# running = True
-# onset_index = 0
-# start_time = time.time()
+# Boucle principale
+running = True
+onset_index = 0
+start_time = time.time()
 
-# while running:
-#     screen.fill(WHITE)
-#     draw_ball()
+while running:
+    screen.fill(WHITE)
+    draw_ball()
 
-#     # Vérifier les événements
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             running = False
+    # Vérifier les événements
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
 
-#     # Mettre à jour la position de la balle
-#     ball_velocity += 1  # Gravité
-#     ball_pos[1] += ball_velocity
+    # Mettre à jour la position de la balle
+    ball_velocity += 1  # Gravité
+    ball_pos[1] += ball_velocity
 
-#     # Faire rebondir la balle si elle touche le sol
-#     if ball_pos[1] >= 600 - ball_radius:
-#         ball_pos[1] = 600 - ball_radius
-#         if ball_velocity > 0:
-#             ball_velocity = 0
+    # Faire rebondir la balle si elle touche le sol
+    if ball_pos[1] >= 600 - ball_radius:
+        ball_pos[1] = 600 - ball_radius
+        if ball_velocity > 0:
+            ball_velocity = 0
 
-#     # Synchroniser l'animation avec les moments clés
-#     if onset_index < len(highlights):
-#         if time.time() - start_time >= highlights[onset_index]:
-#             bounce_ball()
-#             onset_index += 1
+    # Synchroniser l'animation avec les moments clés
+    if onset_index < len(highlights):
+        if time.time() - start_time >= highlights[onset_index]:
+            bounce_ball()
+            onset_index += 1
 
-#     pygame.display.flip()
-#     clock.tick(60)
+    pygame.display.flip()
+    clock.tick(60)
 
-# pygame.quit()
+pygame.quit()

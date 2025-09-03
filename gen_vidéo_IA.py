@@ -4,11 +4,13 @@ from Ball import Ball
 from Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
 import random
-from music_highlight import onsets_frames, velocity_ball
+#from music_highlight import onsets_frames, velocity_ball
 import time
+import pandas as pd
+import numpy as np
 
 audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
-highlights = onsets_frames(audio_path=audio_path)
+# highlights = onsets_frames(audio_path=audio_path)
 ips = 60
 
 try:
