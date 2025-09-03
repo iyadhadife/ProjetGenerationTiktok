@@ -29,8 +29,8 @@ class CircleWall(Wall):
         self.x = x
         self.y = y
         self.radius = radius
-        self.start_angle = start_angle
-        self.end_angle = end_angle
+        self.start_angle = 0
+        self.end_angle = math.pi*2
         self.id = id
 
     def draw(self, surface):
@@ -51,6 +51,9 @@ class CircleWall(Wall):
         ball.x = self.x + (dx / dist) * (self.radius - ball.r)
         ball.y = self.y + (dy / dist) * (self.radius - ball.r)
 
+    def point_in_arc(self, ball : Ball, tol=1e-2):
+        return True
+    
     def area_of_wall(self):
         return math.pi * (self.radius ** 2)
 

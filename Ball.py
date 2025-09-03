@@ -24,7 +24,7 @@ class Ball:
         self.y += self.vy
 
     def check_collision_and_gravity_on_circles(self, wall):
-        BOUNCESTOP = 0.1
+        BOUNCESTOP = 0.01
         if wall.in_the_wall(self):
             self.apply_gravity()
         else:
