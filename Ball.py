@@ -36,7 +36,7 @@ class Ball:
                 if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
                     self.vx = self.vx*-1*self.rest
                     self.vy = self.vy*-1*self.rest
-                    self.rest = math.fabs(random.normalvariate(1,0.5))
+                    self.rest = math.fabs(random.normalvariate(1.0,0.2))
                 else:
                     self.vy = 0
                     self.vx = 0
