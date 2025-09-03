@@ -8,7 +8,7 @@ import random
 import time
 import pandas as pd
 import numpy as np
-from color import generate_rgb_gradient
+from color import generate_rgb_gradient, create_gradient_backward_surface
 audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
 # highlights = onsets_frames(audio_path=audio_path)
 ips = 60
@@ -25,24 +25,22 @@ try:
     #Starting Parameters
     nb_cercles = 15
     radius_step = 20
-    starting_radius = 20
+    starting_radius = 50
     center = (540, 960)
     start_angle = 0
-    end_angle = math.pi * 1.8
+    end_angle = math.pi * 1.9
 
     #Creating Objects
     colors = generate_rgb_gradient((255, 0, 0), (255, 255, 255), nb_cercles)
-    global color
     color_index = 0
-    color = colors[color_index]
-    ball = Ball(center[0], center[1], radius=5, color=color, restitution=1, x_speed=3, y_speed=4, mass=0.1)
+    ball = Ball(center[0], center[1], radius=5, color=(255,255,255), restitution=1, x_speed=3, y_speed=4, mass=0.1)
     walls = []
     start_point = random.uniform(math.pi,math.pi*2)
     for i in range(nb_cercles):
         walls.append(ArcWall(center[0], center[1], radius=starting_radius+(i + 1) * radius_step, id=i, start_angle=start_angle+start_point, end_angle=end_angle+start_point, color=colors[i]))
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     onset_index = 0
-    rot = [0.005*math.log(num+2) for num, i in enumerate(walls)]
+    rot = [0.006*math.log(num+4) for num, i in enumerate(walls)]
     
     # Audio
     pygame.mixer.music.load(audio_path)
@@ -55,7 +53,8 @@ try:
                 pygame.quit()
                 sys.exit()
         
-        screen.fill((0, 0, 0))
+        #screen.fill(colors[color_index])
+        screen.blit(create_gradient_backward_surface(1080, 1920, (0, 0, 0), (54, 0, 0)), (0, 0))
         deplacement = False
 
         # if len(highlights)>0:
@@ -80,8 +79,6 @@ try:
 
         pygame.display.flip()
         clock.tick(ips)
-        color_index = (color_index+1)%nb_cercles
-        ball.color = colors[color_index]
 finally:
     # Stop the screen recorder
     recorder.stop_rec()

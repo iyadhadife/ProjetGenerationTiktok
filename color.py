@@ -1,4 +1,5 @@
 import colorsys
+import pygame
 
 def generate_rgb_gradient(start_rgb, end_rgb, n_steps):
     """
@@ -28,6 +29,19 @@ def generate_rgb_gradient(start_rgb, end_rgb, n_steps):
         gradient.append((int(r * 255), int(g * 255), int(b * 255)))
 
     return gradient
+
+def create_gradient_backward_surface(width, height, color_top, color_bottom):
+    """Crée une surface avec un dégradé vertical."""
+    gradient_surface = pygame.Surface((width, height))
+    for y in range(height):
+        # Calculer la couleur interpolée pour chaque ligne
+        ratio = y / height
+        color = tuple(
+            int(color_top[i] * (1 - ratio) + color_bottom[i] * ratio)
+            for i in range(3)
+        )
+        pygame.draw.line(gradient_surface, color, (0, y), (width, y))
+    return gradient_surface
 
 start_color = (255, 0, 0)  # Rouge
 end_color = (0, 0, 255)    # Bleu
