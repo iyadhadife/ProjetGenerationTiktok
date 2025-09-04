@@ -1,6 +1,7 @@
 import colorsys
 import pygame
 
+# Function to generate a gradient of colors for balls and walls
 def generate_rgb_gradient(start_rgb, end_rgb, n_steps):
     """
     Génère un dégradé de couleurs entre deux couleurs spécifiées en format RGB.
@@ -30,6 +31,7 @@ def generate_rgb_gradient(start_rgb, end_rgb, n_steps):
 
     return gradient
 
+#for backward gradient
 def create_gradient_backward_surface(width, height, color_top, color_bottom):
     """Crée une surface avec un dégradé vertical."""
     gradient_surface = pygame.Surface((width, height))
@@ -43,11 +45,12 @@ def create_gradient_backward_surface(width, height, color_top, color_bottom):
         pygame.draw.line(gradient_surface, color, (0, y), (width, y))
     return gradient_surface
 
-start_color = (255, 0, 0)  # Rouge
-end_color = (0, 0, 255)    # Bleu
-n_colors = 10
+# Testing the gradient function
+# start_color = (255, 0, 0)  # Rouge
+# end_color = (0, 0, 255)    # Bleu
+# n_colors = 10
 
-gradient = generate_rgb_gradient(start_color, end_color, n_colors)
+# gradient = generate_rgb_gradient(start_color, end_color, n_colors)
 
-for color in gradient:
-    print(color)
+# for color in gradient:
+#     print(color)

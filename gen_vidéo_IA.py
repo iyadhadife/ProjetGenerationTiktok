@@ -24,7 +24,7 @@ try:
 
     #Starting Parameters
     nb_cercles = 15
-    radius_step = 20
+    radius_step = 30
     starting_radius = 50
     center = (540, 960)
     start_angle = 0
@@ -58,7 +58,7 @@ try:
         
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     onset_index = 0
-    rot = [0.009*math.log(num+4) for num, i in enumerate(walls)]
+    rot = [0.006*math.log(num+4) for num, i in enumerate(walls)]
     
     # Audio
     pygame.mixer.music.load(audio_path)
