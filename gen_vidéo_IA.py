@@ -4,20 +4,20 @@ from Ball import Ball
 from Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
 import random
-#from music_highlight import onsets_frames, velocity_ball
 import time
 import pandas as pd
 import numpy as np
 from color import generate_rgb_gradient, create_gradient_backward_surface
+
 audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
-# highlights = onsets_frames(audio_path=audio_path)
 ips = 60
+W,H = 1080, 1920
 
 try:
     # Initialiser Pygame and Pygame recorder
     pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
-    screen = pygame.display.set_mode((1080, 1920))
+    screen = pygame.display.set_mode((W, H))
     clock = pygame.time.Clock()
     recorder = ScreenRecorder(ips)  # FPS souhaité
     recorder.start_rec()
@@ -28,19 +28,37 @@ try:
     starting_radius = 50
     center = (540, 960)
     start_angle = 0
-    end_angle = math.pi * 1.9
+    end_angle = math.pi * 1.8
+    bool_trail = True
 
     #Creating Objects
     colors = generate_rgb_gradient((255, 0, 0), (255, 255, 255), nb_cercles)
     color_index = 0
-    ball = Ball(center[0], center[1], radius=5, color=(255,255,255), restitution=1, x_speed=3, y_speed=4, mass=0.1)
+    ball = Ball(center[0], 
+                center[1], 
+                radius=5, 
+                color=(255,255,255), 
+                restitution=1, 
+                x_speed=3, 
+                y_speed=4, 
+                mass=0.1,
+                trail_length=20,
+                bool_trail=bool_trail)
     walls = []
     start_point = random.uniform(math.pi,math.pi*2)
+
     for i in range(nb_cercles):
-        walls.append(ArcWall(center[0], center[1], radius=starting_radius+(i + 1) * radius_step, id=i, start_angle=start_angle+start_point, end_angle=end_angle+start_point, color=colors[i]))
+        walls.append(ArcWall(center[0], 
+                             center[1], 
+                             radius=starting_radius+(i + 1) * radius_step, 
+                             id=i, 
+                             start_angle=start_angle+start_point, 
+                             end_angle=end_angle+start_point, 
+                             color=colors[i]))
+        
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     onset_index = 0
-    rot = [0.006*math.log(num+4) for num, i in enumerate(walls)]
+    rot = [0.009*math.log(num+4) for num, i in enumerate(walls)]
     
     # Audio
     pygame.mixer.music.load(audio_path)
@@ -53,12 +71,10 @@ try:
                 pygame.quit()
                 sys.exit()
         
+        # Change background color based on time
         #screen.fill(colors[color_index])
-        screen.blit(create_gradient_backward_surface(1080, 1920, (0, 0, 0), (54, 0, 0)), (0, 0))
-        deplacement = False
-
-        # if len(highlights)>0:
-        #     highlights = velocity_ball(highlights, time.time(), ball, walls[0])
+        screen.fill((15, 15, 20))
+        #screen.blit(create_gradient_backward_surface(W, H, (0, 0, 0), (0, 0, 0)), (0, 0))
 
         # Collision on each arcs
         for num, wall in enumerate(walls):
@@ -75,8 +91,9 @@ try:
 
         #Moving and drawing the ball
         ball.move()
-        ball.draw(screen)
-
+        ball.draw(screen) 
+        
+        # Update the display and maintain the frame rate
         pygame.display.flip()
         clock.tick(ips)
 finally:
