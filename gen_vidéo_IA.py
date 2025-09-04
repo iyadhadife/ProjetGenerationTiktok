@@ -24,7 +24,7 @@ try:
 
     #Starting Parameters
     nb_cercles = 15
-    radius_step = 30
+    radius_step = 25
     starting_radius = 50
     center = (540, 960)
     start_angle = 0
@@ -58,7 +58,7 @@ try:
         
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     onset_index = 0
-    rot = [0.006*math.log(num+4) for num, i in enumerate(walls)]
+    rot = [0.008*math.log(num+3) for num, i in enumerate(walls)]
     
     # Audio
     pygame.mixer.music.load(audio_path)
@@ -88,7 +88,6 @@ try:
         for num, wall in enumerate(walls):
             wall.start_angle += rot[wall.id]
             wall.end_angle += rot[wall.id]
-
         #Moving and drawing the ball
         ball.move()
         ball.draw(screen) 
