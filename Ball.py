@@ -24,7 +24,7 @@ class Ball:
         self.x += min(self.vx, max_speed)  # Limite la vitesse horizontale
         self.y += min(self.vy, max_speed)  # Limite la vitesse verticale
 
-    def check_collision_and_gravity_on_circles(self, wall):
+    def check_collision_and_gravity_on_circles(self, wall, ball_bouncing_sound : pygame.mixer.Sound = None):
         BOUNCESTOP = 0.01
         if wall.in_the_wall(self):
             self.apply_gravity()
@@ -33,6 +33,8 @@ class Ball:
                 self.apply_gravity()
                 return True
             else:
+                if ball_bouncing_sound != None:
+                    ball_bouncing_sound.play()
                 wall.Correct_ball_position(self)
                 if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
                     self.vx = self.vx*-1*self.rest

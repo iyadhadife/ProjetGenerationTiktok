@@ -15,6 +15,8 @@ from merging_audio_video import charger_video, record_audio
 audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
 video_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation.mp4"
 audio_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation_wav.wav"
+# Chemin vers ton fichier son
+ball_bouncing_sound_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\bouncing_sound\bouncing_ball_v1.mp3"
 
 #video parameters
 ips = 60
@@ -71,6 +73,7 @@ try:
     
     # Audio
     pygame.mixer.music.load(audio_path)
+    ball_bouncing_sound = pygame.mixer.Sound(ball_bouncing_sound_path)
     pygame.mixer.music.play()
     start_time = time.time()
 
@@ -90,7 +93,7 @@ try:
         for num, wall in enumerate(walls):
             wall.draw(screen)
             if num == 0:
-                destroy = ball.check_collision_and_gravity_on_circles(wall)
+                destroy = ball.check_collision_and_gravity_on_circles(wall,ball_bouncing_sound=ball_bouncing_sound)
                 if destroy:
                     walls.remove(wall)
 
