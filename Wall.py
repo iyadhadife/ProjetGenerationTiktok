@@ -71,7 +71,7 @@ class ArcWall(Wall):
 
     def draw(self, surface):
         rect = pygame.Rect(self.x - self.radius, self.y - self.radius, self.radius * 2, self.radius * 2)
-        pygame.draw.arc(surface, self.color, rect, self.start_angle, self.end_angle, 5)
+        pygame.draw.arc(surface, self.color, rect, self.start_angle, self.end_angle, 7)
 
     def distance_to_middle(self, ball : Ball):
         dx = ball.x - self.x

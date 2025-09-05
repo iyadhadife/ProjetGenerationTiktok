@@ -20,9 +20,9 @@ class Ball:
     def apply_gravity(self):
         self.vy += self.g * self.mass # accélère la vitesse verticale
 
-    def move(self):
-        self.x += self.vx
-        self.y += self.vy
+    def move(self,max_speed=20):
+        self.x += min(self.vx, max_speed)  # Limite la vitesse horizontale
+        self.y += min(self.vy, max_speed)  # Limite la vitesse verticale
 
     def check_collision_and_gravity_on_circles(self, wall):
         BOUNCESTOP = 0.01
@@ -37,7 +37,7 @@ class Ball:
                 if math.fabs(self.vy)+math.fabs(self.vx) > BOUNCESTOP:
                     self.vx = self.vx*-1*self.rest
                     self.vy = self.vy*-1*self.rest
-                    self.rest = math.fabs(random.normalvariate(1.0,0.2))*math.ceil((wall.id+1)/5)
+                    self.rest = math.fabs(random.normalvariate(1.0,0.2))
                 else:
                     self.vy = 0
                     self.vx = 0

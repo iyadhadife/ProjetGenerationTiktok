@@ -3,13 +3,20 @@ from pygame.locals import *
 from Ball import Ball
 from Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
+import threading
 import random
 import time
 import pandas as pd
 import numpy as np
 from color import generate_rgb_gradient, create_gradient_backward_surface
+from merging_audio_video import charger_video, record_audio
 
+#video and audio paths
 audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
+video_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation.mp4"
+audio_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation_wav.wav"
+
+#video parameters
 ips = 60
 W,H = 1080, 1920
 
@@ -19,8 +26,12 @@ try:
     pygame.init()
     screen = pygame.display.set_mode((W, H))
     clock = pygame.time.Clock()
-    recorder = ScreenRecorder(ips)  # FPS souhaité
+    recorder = ScreenRecorder(ips)  
     recorder.start_rec()
+    stop_event = threading.Event()
+    audio_thread = threading.Thread(target=record_audio, args=(stop_event, audio_temp))
+    audio_thread.start()
+
 
     #Starting Parameters
     nb_cercles = 15
@@ -30,7 +41,8 @@ try:
     start_angle = 0
     end_angle = math.pi * 1.8
     bool_trail = True
-
+    max_speed = 15
+    
     #Creating Objects
     colors = generate_rgb_gradient((255, 0, 0), (255, 255, 255), nb_cercles)
     color_index = 0
@@ -46,7 +58,6 @@ try:
                 bool_trail=bool_trail)
     walls = []
     start_point = random.uniform(math.pi,math.pi*2)
-
     for i in range(nb_cercles):
         walls.append(ArcWall(center[0], 
                              center[1], 
@@ -55,15 +66,14 @@ try:
                              start_angle=start_angle+start_point, 
                              end_angle=end_angle+start_point, 
                              color=colors[i]))
-        
     walls = sorted(walls, key=lambda w: w.area_of_wall())
-    onset_index = 0
-    rot = [0.008*math.log(num+3) for num, i in enumerate(walls)]
+    rot = [0.01*math.log(num+2) for num, i in enumerate(walls)]
     
     # Audio
     pygame.mixer.music.load(audio_path)
     pygame.mixer.music.play()
     start_time = time.time()
+
     # Main loop
     while True:
         for e in pygame.event.get():
@@ -72,8 +82,8 @@ try:
                 sys.exit()
         
         # Change background color based on time
-        #screen.fill(colors[color_index])
         screen.fill((15, 15, 20))
+        #screen.fill(colors[color_index])
         #screen.blit(create_gradient_backward_surface(W, H, (0, 0, 0), (0, 0, 0)), (0, 0))
 
         # Collision on each arcs
@@ -86,17 +96,27 @@ try:
 
         # Walls rotation
         for num, wall in enumerate(walls):
-            wall.start_angle += rot[wall.id]
-            wall.end_angle += rot[wall.id]
+            wall.start_angle += rot[num]
+            wall.end_angle += rot[num]
+
         #Moving and drawing the ball
-        ball.move()
-        ball.draw(screen) 
-        
+        ball.move(max_speed=max_speed)
+        ball.draw(screen)
+
         # Update the display and maintain the frame rate
         pygame.display.flip()
         clock.tick(ips)
 finally:
     # Stop the screen recorder
     recorder.stop_rec()
-    recorder.save_recording(r"C:\Users\ihadi\Desktop\VideoResultTikTok\my_simulation.mp4")
+    recorder.save_recording(video_temp)
+
+    # Stop audio
+    stop_event.set()
+    audio_thread.join()
+
+    # Fusion audio + vidéo
+    print("🎬 Fusion audio + vidéo...")
+    charger_video(audio_temp, video_temp)
+
     pygame.quit()        
