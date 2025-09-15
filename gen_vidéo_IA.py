@@ -10,9 +10,10 @@ import pandas as pd
 import numpy as np
 from color import generate_rgb_gradient, create_gradient_backward_surface
 from merging_audio_video import charger_video, record_audio
+from animations import animate_wall
 
 #video and audio paths
-audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
+audio_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\MusiqueChill1\Free.mp3"
 video_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation.mp4"
 audio_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation_wav.wav"
 # Chemin vers ton fichier son
@@ -46,7 +47,7 @@ try:
     max_speed = 15
     
     #Creating Objects
-    colors = generate_rgb_gradient((255, 0, 0), (255, 255, 255), nb_cercles)
+    colors = generate_rgb_gradient((255, 0, 0), (40, 0, 0), nb_cercles)
     color_index = 0
     ball = Ball(center[0], 
                 center[1], 
@@ -96,6 +97,8 @@ try:
                 destroy = ball.check_collision_and_gravity_on_circles(wall,ball_bouncing_sound=ball_bouncing_sound)
                 if destroy:
                     walls.remove(wall)
+                    for wall in walls:
+                        wall.radius -= radius_step
 
         # Walls rotation
         for num, wall in enumerate(walls):
