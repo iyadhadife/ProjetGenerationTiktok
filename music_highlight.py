@@ -89,6 +89,9 @@ running = True
 onset_index = 0
 start_time = time.time()
 
+def polynomial(t: float, r1 : float, r2 : float):
+    return 0.01*(t-r1)*(t-r2)    
+
 while running:
     screen.fill(WHITE)
     draw_ball()
@@ -111,7 +114,9 @@ while running:
     # Synchroniser l'animation avec les moments clés
     if onset_index < len(highlights):
         if time.time() - start_time >= highlights[onset_index]:
-            bounce_ball()
+            ball_pos[1] = polynomial((time.time() - start_time)/60, highlights[onset_index-1] if onset_index>0 else 0, highlights[onset_index])
+            ball_pos[0] = 1000 * (time.time() - start_time)/60
+            #bounce_ball()
             onset_index += 1
 
     pygame.display.flip()
