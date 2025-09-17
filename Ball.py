@@ -4,6 +4,16 @@ import random
 from collections import deque
 
 class Ball:
+    def ball_colision(self, ball2):
+        dx = ball2.x - self.x
+        dy = ball2.y - self.y
+        distance = math.hypot(dx, dy)
+        if distance < self.r + ball2.r:
+            self.vx = (self.vx * -1) 
+            self.vy = (self.vy * -1)
+            ball2.vx = (ball2.vx * -1)
+            ball2.vy = (ball2.vy * -1)
+
     def __init__(self, x_pos, y_pos, radius, color, mass=1, restitution=0.5, x_speed=0, y_speed=0, gravity=0.81, trail_length=20, bool_trail=False):
         self.x = float(x_pos)
         self.y = float(y_pos)
@@ -24,10 +34,11 @@ class Ball:
         self.x += min(self.vx, max_speed)  # Limite la vitesse horizontale
         self.y += min(self.vy, max_speed)  # Limite la vitesse verticale
 
-    def check_collision_and_gravity_on_circles(self, wall, ball_bouncing_sound : pygame.mixer.Sound = None):
+    def check_collision_and_gravity_on_circles(self, wall, ball2, ball_bouncing_sound : pygame.mixer.Sound = None):
         BOUNCESTOP = 0.01
         if wall.in_the_wall(self):
             self.apply_gravity()
+            self.ball_colision(ball2)
         else:
             if wall.point_in_arc(self)==False:
                 self.apply_gravity()

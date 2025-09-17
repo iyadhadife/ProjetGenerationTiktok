@@ -37,26 +37,36 @@ try:
 
 
     #Starting Parameters
-    nb_cercles = 15
+    nb_cercles = 30
     radius_step = 25
-    starting_radius = 50
+    starting_radius = 100
     center = (540, 960)
     start_angle = 0
     end_angle = math.pi * 1.8
-    bool_trail = True
+    bool_trail = False
     max_speed = 15
     
     #Creating Objects
     colors = generate_rgb_gradient((255, 0, 0), (40, 0, 0), nb_cercles)
     color_index = 0
-    ball = Ball(center[0], 
-                center[1], 
-                radius=5, 
+    ball = Ball(center[0]-radius_step/2, 
+                center[1]-radius_step/2, 
+                radius=10, 
                 color=(255,255,255), 
                 restitution=1, 
                 x_speed=3, 
                 y_speed=4, 
-                mass=0.1,
+                mass=1,
+                trail_length=20,
+                bool_trail=bool_trail)
+    ball2 = Ball(center[0]+radius_step/2, 
+                center[1]+radius_step/2, 
+                radius=10, 
+                color=(255,255,255), 
+                restitution=1, 
+                x_speed=3, 
+                y_speed=4, 
+                mass=1,
                 trail_length=20,
                 bool_trail=bool_trail)
     walls = []
@@ -66,12 +76,13 @@ try:
                              center[1], 
                              radius=starting_radius+(i + 1) * radius_step, 
                              id=i, 
-                             start_angle=start_angle+start_point, 
-                             end_angle=end_angle+start_point, 
+                             start_angle=start_angle+start_point+(0.1*(i+1)), 
+                             end_angle=end_angle+start_point+(0.1*(i+1)), 
                              color=colors[i]))
+        
     walls = sorted(walls, key=lambda w: w.area_of_wall())
-    rot = [0.01*math.log(num+2) for num, i in enumerate(walls)]
-    
+    #rot = [0.01*math.log(num+2) for num, i in enumerate(walls)]
+    rot = [0.01 for num, i in enumerate(walls)]
     # Audio
     pygame.mixer.music.load(audio_path)
     ball_bouncing_sound = pygame.mixer.Sound(ball_bouncing_sound_path)
@@ -90,17 +101,17 @@ try:
         #screen.fill(colors[color_index])
         #screen.blit(create_gradient_backward_surface(W, H, (0, 0, 0), (0, 0, 0)), (0, 0))
 
+        ##### FIRST BALL #####
         # Collision on each arcs
         for num, wall in enumerate(walls):
             wall.draw(screen)
             if num == 0:
-                destroy = ball.check_collision_and_gravity_on_circles(wall,ball_bouncing_sound=ball_bouncing_sound)
+                destroy = ball.check_collision_and_gravity_on_circles(wall, ball2, ball_bouncing_sound=ball_bouncing_sound)
                 if destroy:
                     walls.remove(wall)
                     for wall in walls:
                         wall.radius -= radius_step
 
-        # Walls rotation
         for num, wall in enumerate(walls):
             wall.start_angle += rot[num]
             wall.end_angle += rot[num]
@@ -109,7 +120,27 @@ try:
         ball.move(max_speed=max_speed)
         ball.draw(screen)
 
+        ##### SECOND BALL #####
+        for num, wall in enumerate(walls):
+            wall.draw(screen)
+            if num == 0:
+                destroy = ball2.check_collision_and_gravity_on_circles(wall, ball, ball_bouncing_sound=ball_bouncing_sound)
+                if destroy:
+                    walls.remove(wall)
+                    for wall in walls:
+                        wall.radius -= radius_step
+
+        for num, wall in enumerate(walls):
+            wall.start_angle += rot[num]
+            wall.end_angle += rot[num]
+
+        #Moving and drawing the ball
+        ball2.move(max_speed=max_speed)
+        ball2.draw(screen)
+
         # Update the display and maintain the frame rate
+        
+
         pygame.display.flip()
         clock.tick(ips)
 finally:

@@ -51,12 +51,15 @@ def velocity_ball(highlight: np.ndarray, now: float, ball: Ball, wall: Wall, ips
     highlight = np.delete(highlight, 0)
     return highlight
 
+ips = 60
+W,H = 1080, 1920
+
 highlights = onsets_frames()
 # Initialiser Pygame
 pygame.init()
 
 # Paramètres de la fenêtre
-screen = pygame.display.set_mode((800, 600))
+screen = pygame.display.set_mode((W, H))
 pygame.display.set_caption('Balle Rebonds')
 
 # Audio
@@ -64,20 +67,21 @@ audio_path = r"C:\Users\ihadi\Downloads\pirate-tavern-full-version-167990.mp3"
 pygame.mixer.music.load(audio_path)
 pygame.mixer.music.play()
 # Couleurs
-WHITE = (255, 255, 255)
-GREEN = (0, 255, 0)
+black = (15, 15, 20)
+white = (255, 255, 255)
 
 # Paramètres de la balle
 ball_radius = 20
-ball_pos = [400, 300]
+ball_pos = [100, 600 - ball_radius]
 ball_velocity = 0
+floor = 800
 
 # Fréquence de mise à jour
 clock = pygame.time.Clock()
 
 # Fonction pour dessiner la balle
 def draw_ball():
-    pygame.draw.circle(screen, GREEN, ball_pos, ball_radius)
+    pygame.draw.circle(screen, white, ball_pos, ball_radius)
 
 # Fonction pour faire rebondir la balle
 def bounce_ball():
@@ -89,11 +93,13 @@ running = True
 onset_index = 0
 start_time = time.time()
 
-def polynomial(t: float, r1 : float, r2 : float):
-    return 0.01*(t-r1)*(t-r2)    
+def polynomial(t : float, r1 : float, r2 : float, height=100, floor=floor):
+    mid = (r1 + r2) / 2
+    return floor + (height * (1 - ((t - mid) / ((r2 - r1) / 2))**2))
+
 
 while running:
-    screen.fill(WHITE)
+    screen.fill(black)
     draw_ball()
 
     # Vérifier les événements
@@ -101,25 +107,19 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-    # Mettre à jour la position de la balle
-    ball_velocity += 1  # Gravité
-    ball_pos[1] += ball_velocity
-
-    # Faire rebondir la balle si elle touche le sol
-    if ball_pos[1] >= 600 - ball_radius:
-        ball_pos[1] = 600 - ball_radius
-        if ball_velocity > 0:
-            ball_velocity = 0
-
-    # Synchroniser l'animation avec les moments clés
     if onset_index < len(highlights):
-        if time.time() - start_time >= highlights[onset_index]:
-            ball_pos[1] = polynomial((time.time() - start_time)/60, highlights[onset_index-1] if onset_index>0 else 0, highlights[onset_index])
-            ball_pos[0] = 1000 * (time.time() - start_time)/60
-            #bounce_ball()
+        t = time.time() - start_time
+        # If we're still inside the interval
+        if onset_index > 0 and t < highlights[onset_index]:
+            r1 = highlights[onset_index - 1]
+            r2 = highlights[onset_index]
+            ball_pos[0] = t * 60 # move across screen
+            ball_pos[1] = polynomial(t, r1, r2, height=50)  # bounce arc
+        elif t >= highlights[onset_index]:
             onset_index += 1
 
+    ball_pos[0] -= 20/ips
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(ips)
 
 pygame.quit()
