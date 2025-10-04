@@ -39,10 +39,10 @@ try:
     #Starting Parameters
     nb_cercles = 30
     radius_step = 25
-    starting_radius = 100
+    starting_radius = 200
     center = (540, 960)
     start_angle = 0
-    end_angle = math.pi * 1.8
+    end_angle = math.pi * 1.7
     bool_trail = False
     max_speed = 15
     
@@ -51,24 +51,27 @@ try:
     color_index = 0
     ball = Ball(center[0]-radius_step/2, 
                 center[1]-radius_step/2, 
-                radius=10, 
+                radius=20, 
                 color=(255,255,255), 
                 restitution=1, 
                 x_speed=3, 
                 y_speed=4, 
                 mass=1,
                 trail_length=20,
-                bool_trail=bool_trail)
+                bool_trail=bool_trail,
+                name='USA')
+    
     ball2 = Ball(center[0]+radius_step/2, 
                 center[1]+radius_step/2, 
-                radius=10, 
+                radius=20, 
                 color=(255,255,255), 
                 restitution=1, 
                 x_speed=3, 
                 y_speed=4, 
                 mass=1,
                 trail_length=20,
-                bool_trail=bool_trail)
+                bool_trail=bool_trail,
+                name='China')
     walls = []
     start_point = random.uniform(math.pi,math.pi*2)
     for i in range(nb_cercles):
@@ -138,9 +141,20 @@ try:
         ball2.move(max_speed=max_speed)
         ball2.draw(screen)
 
-        # Update the display and maintain the frame rate
-        
+        # Display scores
+        font2 = pygame.font.SysFont("Arial", 50)
+        text2 = font2.render(ball.name + " " + str(ball.wall_broken), True, (255, 255, 255))
+        pos_text=(800,600)
+        text_rect2 = text2.get_rect(center=pos_text)
+        screen.blit(text2, text_rect2)
 
+        font2 = pygame.font.SysFont("Arial", 50)
+        text2 = font2.render(ball2.name + " " + str(ball2.wall_broken), True, (255, 255, 255))
+        pos_text=(100,600)
+        text_rect2 = text2.get_rect(center=pos_text)
+        screen.blit(text2, text_rect2)
+
+        # Update the display and maintain the frame rate
         pygame.display.flip()
         clock.tick(ips)
 finally:
