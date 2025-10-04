@@ -33,20 +33,36 @@ class Ball:
                 nx = dx / distance
                 ny = dy / distance
             else:
-                # Cas où les centres sont exactement superposés
-                nx, ny = 1, 0  
+                nx, ny = 1.0, 0.0  # Cas des centres superposés
 
-            # 3. Décaler les balles de moitié de l'overlap chacune
+            # 3. Décaler les balles pour corriger le chevauchement
             self.x -= nx * (overlap / 2)
             self.y -= ny * (overlap / 2)
             ball2.x += nx * (overlap / 2)
             ball2.y += ny * (overlap / 2)
 
-            # 4. Inverser les vitesses (simple, mais pas réaliste)
-            self.vx *= -1
-            self.vy *= -1
-            ball2.vx *= -1
-            ball2.vy *= -1
+            # 4. Calculer les composantes de vitesse le long de la normale
+            # Produit scalaire (projection)
+            dvx = self.vx - ball2.vx
+            dvy = self.vy - ball2.vy
+            vn = dvx * nx + dvy * ny  # vitesse relative le long de la normale
+
+            # Si les balles s’éloignent déjà, on ne fait rien
+            if vn > 0:
+                return
+
+            # 5. Calcul du coefficient de restitution (1 = collision parfaitement élastique)
+            restitution = 1.0
+
+            # 6. Calcul de l’impulsion
+            m1, m2 = self.mass, ball2.mass
+            impulse = -(1 + restitution) * vn / (1/m1 + 1/m2)
+
+            # 7. Appliquer l’impulsion le long de la normale
+            self.vx += (impulse * nx) / m1
+            self.vy += (impulse * ny) / m1
+            ball2.vx -= (impulse * nx) / m2
+            ball2.vy -= (impulse * ny) / m2
 
     def apply_gravity(self):
         self.vy += self.g * self.mass # accélère la vitesse verticale
