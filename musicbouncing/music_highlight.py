@@ -1,8 +1,8 @@
 import librosa
 import time
 import math 
-import Ball as Ball
-import Wall as Wall
+import bouncing1v1.Ball as Ball
+import bouncing1v1.Wall as Wall
 import numpy as np
 import pygame
 

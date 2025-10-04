@@ -1,6 +1,6 @@
 import pygame
 import math
-from Ball import Ball
+from bouncing1v1.Ball import Ball
 
 class Wall:
     """Classe générique pour un mur ou une frontière."""

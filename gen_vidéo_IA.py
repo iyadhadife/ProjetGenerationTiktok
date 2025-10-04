@@ -1,15 +1,15 @@
 import pygame, sys, math
 from pygame.locals import *
-from Ball import Ball
-from Wall import CircleWall, ArcWall
+from bouncing1v1.Ball import Ball
+from bouncing1v1.Wall import CircleWall, ArcWall
 from pygame_screen_record import ScreenRecorder
 import threading
 import random
 import time
 import pandas as pd
 import numpy as np
-from color import generate_rgb_gradient, create_gradient_backward_surface
-from merging_audio_video import charger_video, record_audio
+from audio_image_scripts.color import generate_rgb_gradient, create_gradient_backward_surface
+from audio_image_scripts.merging_audio_video import charger_video, record_audio
 
 #video and audio paths
 audio_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\MusiqueChill1\Free.mp3"
