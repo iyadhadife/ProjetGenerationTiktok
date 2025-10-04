@@ -10,7 +10,6 @@ import pandas as pd
 import numpy as np
 from color import generate_rgb_gradient, create_gradient_backward_surface
 from merging_audio_video import charger_video, record_audio
-from animations import animate_wall
 
 #video and audio paths
 audio_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\MusiqueChill1\Free.mp3"
@@ -37,21 +36,22 @@ try:
 
 
     #Starting Parameters
-    nb_cercles = 30
+    nb_cercles = 300
     radius_step = 25
     starting_radius = 200
     center = (540, 960)
     start_angle = 0
     end_angle = math.pi * 1.7
-    bool_trail = False
+    bool_trail = True
     max_speed = 15
     
     #Creating Objects
     colors = generate_rgb_gradient((255, 0, 0), (40, 0, 0), nb_cercles)
     color_index = 0
+    starting_radius_ball = 20
     ball = Ball(center[0]-radius_step/2, 
                 center[1]-radius_step/2, 
-                radius=20, 
+                radius=starting_radius_ball, 
                 color=(255,255,255), 
                 restitution=1, 
                 x_speed=3, 
@@ -63,7 +63,7 @@ try:
     
     ball2 = Ball(center[0]+radius_step/2, 
                 center[1]+radius_step/2, 
-                radius=20, 
+                radius=starting_radius_ball, 
                 color=(255,255,255), 
                 restitution=1, 
                 x_speed=3, 
@@ -85,7 +85,7 @@ try:
         
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     #rot = [0.01*math.log(num+2) for num, i in enumerate(walls)]
-    rot = [0.01 for num, i in enumerate(walls)]
+    rot = [0.05 for num, i in enumerate(walls)]
     # Audio
     pygame.mixer.music.load(audio_path)
     ball_bouncing_sound = pygame.mixer.Sound(ball_bouncing_sound_path)
@@ -133,9 +133,16 @@ try:
                     for wall in walls:
                         wall.radius -= radius_step
 
+        bool_wallmoving = False
+        if walls[0].radius > starting_radius:
+            bool_wallmoving = True
+            ball.wall_broken = 0
+
         for num, wall in enumerate(walls):
             wall.start_angle += rot[num]
             wall.end_angle += rot[num]
+            if bool_wallmoving:
+                wall.radius -= 10
 
         #Moving and drawing the ball
         ball2.move(max_speed=max_speed)
@@ -150,7 +157,7 @@ try:
 
         font2 = pygame.font.SysFont("Arial", 50)
         text2 = font2.render(ball2.name + " " + str(ball2.wall_broken), True, (255, 255, 255))
-        pos_text=(100,600)
+        pos_text=(300,600)
         text_rect2 = text2.get_rect(center=pos_text)
         screen.blit(text2, text_rect2)
 

@@ -111,7 +111,7 @@ class Ball:
             # balle nette par-dessus
             pygame.draw.circle(screen, self.color, (int(self.x), int(self.y)), self.r)
             pygame.draw.circle(screen, (255,255,255), (int(self.x), int(self.y)), self.r, 2)
-            text = font.render(self.name, True, (int(self.x), int(self.y)))
+            text = font.render(self.name, True, (0,0,0))
             text_rect = text.get_rect(center=(int(self.x), int(self.y)))
             screen.blit(text, text_rect)
         else:
