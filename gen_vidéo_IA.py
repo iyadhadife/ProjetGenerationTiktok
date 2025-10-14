@@ -36,13 +36,13 @@ try:
 
 
     #Starting Parameters
-    nb_cercles = 300
+    nb_cercles = 20
     radius_step = 25
     starting_radius = 200
     center = (540, 960)
     start_angle = 0
     end_angle = math.pi * 1.7
-    bool_trail = True
+    bool_trail = False
     max_speed = 15
     
     #Creating Objects
@@ -85,7 +85,7 @@ try:
         
     walls = sorted(walls, key=lambda w: w.area_of_wall())
     #rot = [0.01*math.log(num+2) for num, i in enumerate(walls)]
-    rot = [0.05 for num, i in enumerate(walls)]
+    rot = [0.02 for num, i in enumerate(walls)]
     # Audio
     pygame.mixer.music.load(audio_path)
     ball_bouncing_sound = pygame.mixer.Sound(ball_bouncing_sound_path)

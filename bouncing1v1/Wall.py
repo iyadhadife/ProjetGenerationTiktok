@@ -38,6 +38,22 @@ class CircleWall(Wall):
     def draw(self, surface):
         pygame.draw.circle(surface, (0, 100, 255), (self.x, self.y), self.radius, 1)
 
+        # Couleur principale du contour
+        base_color = (0, 100, 255)
+        
+        # Dessin du halo lumineux (contour diffus)
+        for i in range(6, 0, -1):  # 6 cercles pour créer un dégradé
+            alpha = int(30 * i)  # transparence décroissante
+            glow_surface = pygame.Surface((self.radius * 4, self.radius * 4), pygame.SRCALPHA)
+            pygame.draw.circle(
+                glow_surface,
+                (*base_color, alpha),
+                (self.radius * 2, self.radius * 2),
+                self.radius + i * 2,
+                width=0
+            )
+            surface.blit(glow_surface, (self.x - self.radius * 2, self.y - self.radius * 2))
+
     def distance_to_middle(self, ball : Ball):
         dx = ball.x - self.x
         dy = ball.y - self.y
