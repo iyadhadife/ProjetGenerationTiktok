@@ -12,12 +12,11 @@ from audio_image_scripts.color import generate_rgb_gradient, create_gradient_bac
 from audio_image_scripts.merging_audio_video import charger_video, record_audio
 
 #video and audio paths
-audio_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\MusiqueChill1\Free.mp3"
-video_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation.mp4"
-audio_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation_wav.wav"
+audio_path = r".\bin\MusiqueChill1\Free.mp3"
+video_temp = r".\VideoResultTikTok\corbeille\my_simulation.mp4"
+audio_temp = r".\VideoResultTikTok\corbeille\my_simulation_wav.wav"
 # Chemin vers ton fichier son
-ball_bouncing_sound_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\bouncing_sound\bouncing_ball_v1.mp3"
-
+ball_bouncing_sound_path = r".\bin\bouncing_sound\bouncing_ball_v1.mp3"
 #video parameters
 ips = 60
 W,H = 1080, 1920
