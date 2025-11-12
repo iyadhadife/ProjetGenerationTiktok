@@ -1,10 +1,8 @@
-import cv2
 import numpy as np
 from pydub import AudioSegment
 from pydub.playback import play
 import pyaudio, wave
-from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips
-import os   
+from moviepy.editor import VideoFileClip, AudioFileClip, concatenate_videoclips 
 
 # Audio parameters
 FORMAT = pyaudio.paInt16
@@ -59,6 +57,6 @@ def charger_video(audio_path, video_path):
     final_clip = video_clip.set_audio(audio_clip)
 
     # Exporter la vidéo finale
-    final_clip.write_videofile(r"C:\Users\ihadi\Desktop\VideoResultTikTok\my_simulation_audio_video.mp4", codec="libx264", audio_codec="aac")
+    final_clip.write_videofile(r".\VideoResult\my_simulation_audio_video.mp4", codec="libx264", audio_codec="aac")
 
     print("Fusion audio + vidéo terminée !")
