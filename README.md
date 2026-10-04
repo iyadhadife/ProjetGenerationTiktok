@@ -49,7 +49,26 @@ python beat_render.py ma_musique.mp3 --max-duration 30 --title "Qui va gagner ?"
 
 Deuxième onglet de l'interface : une balle tombe sous gravité et rebondit sur des plateformes qui apparaissent au bon endroit, **sur le tempo du morceau** ([`source/platform_render.py`](source/platform_render.py)).
 
-- **Rythme :** librosa détecte la pulsation (BPM). La balle rebondit tous les 1, 2 ou 4 temps selon l'écart minimum choisi, calée sur les temps les plus forts. Un mode « attaques » suit plutôt les temps forts les plus marqués.
+- **Sheet Sage 2 (moteur par défaut) :** [m-a-p/SheetSage2](https://huggingface.co/m-a-p/SheetSage2) relève la partition du morceau comme le ferait un musicien.
+  - **Ce qu'il produit :** la mélodie (vocale ou instrumentale), les accords, les temps, les débuts de mesure, la tonalité et la structure.
+  - **Dans la vidéo :** chaque note de mélodie donne un rebond, les accords servent d'accompagnement doux, le fond pulse sur les temps détectés et la caméra zoome légèrement à chaque début de mesure.
+  - **Service séparé :** il tourne dans son propre conteneur (`web/transcriber/`), car il exige des versions précises de PyTorch, transformers et numpy.
+  - **Coût et cache :** compter environ 2 minutes de calcul par minute de musique la première fois. Chaque morceau est ensuite gardé en cache, donc les vidéos suivantes, quels que soient les réglages, sont immédiates.
+  - **Licence :** CC BY-NC 4.0, usage **non commercial** uniquement.
+  - **Comparaison :** le notebook [`experiments/transcription/comparaison_transcription.ipynb`](experiments/transcription/comparaison_transcription.ipynb) compare toutes les approches essayées (Basic Pitch, Demucs, Pop2Piano, hybride, Viterbi, YourMT3+, Sheet Sage 2).
+- **Basic Pitch (moteur rapide) :** toute la musique est transcrite en notes par [Basic Pitch](https://github.com/spotify/basic-pitch) (Spotify), via le modèle ONNX.
+  - Chaque note ou accord, c'est-à-dire des notes qui commencent ensemble, donne **un rebond**.
+  - Le piano rejoue toutes les notes transcrites, avec leur durée et leur intensité réelles : la musique reste reconnaissable.
+  - Les notes trop rapprochées (moins de 0,15 s, réglable) partagent le même rebond.
+  - Exemple : 30 s de *Pirates des Caraïbes* donnent 228 notes et 107 rebonds.
+- **Mélodie principale (par défaut) :** sur un morceau à plusieurs instruments, le piano ne joue pas tout.
+  - **Choix des notes :** parmi les notes transcrites, il garde la plus marquante à chaque instant (intensité × durée, tessiture C3–E6, cordes graves comprises), avec une pénalité pour les grands sauts afin que la ligne reste cohérente. Les notes les moins marquantes sont écartées (**sélectivité de la mélodie**).
+  - **Accompagnement :** l'accord joué par l'ensemble des instruments, en favorisant la tonalité, est rejoué doucement dans le grave, seulement quand il change.
+  - **Pauses :** pendant une pause de la mélodie, des rebonds silencieux sur des plateformes discrètes évitent les sauts géants hors de l'écran.
+  - **Octaves :** chaque note est ramenée à l'octave la plus proche de la précédente, car un thème doublé grave + aigu ferait sauter la mélodie de registre.
+  - **Exemple :** sur 1 minute de *Pirates des Caraïbes*, 472 notes transcrites donnent 150 notes de mélodie.
+- **Vitesse de lecture (×0,25 à ×1) :** ralentit tout pour mieux entendre les notes rapides : notes, rebonds, plateformes et musique d'origine (filtre `atempo` de ffmpeg, à hauteur constante). L'écart minimum entre rebonds s'applique à la vidéo ralentie : ralentir sépare donc les notes qui partageaient un rebond.
+- **Rythme (autres modes) :** librosa détecte la pulsation (BPM) au cours du temps : la grille suit les accélérations et ralentissements du morceau. La balle rebondit tous les 1, 2 ou 4 temps selon l'écart minimum choisi, calée sur les temps les plus forts. Un mode « attaques » suit plutôt les temps forts les plus marqués.
 - **Plateformes :** chacune est orientée pour renvoyer la balle vers la suivante. La trajectoire est une vraie parabole sous gravité constante.
 - **Effets :** apparition des plateformes avec ralenti de fin de mouvement, puis flash, onde de choc, particules et tremblement à l'impact. S'y ajoutent la traînée lumineuse, la caméra qui suit la balle, le fond qui pulse sur chaque temps, un petit zoom à chaque mesure et des couleurs en dégradé.
 - **Réglages :** tous ces effets se règlent dans l'onglet.
@@ -59,18 +78,26 @@ cd source
 python platform_render.py ma_musique.mp3 --max-duration 30
 ```
 
-### Notes de piano
+### Piano : accords détectés dans la musique
 
-Chaque rebond peut jouer une note de piano qui suit la musique ([`source/piano.py`](source/piano.py)). Cette option est disponible dans les deux onglets.
+Chaque rebond peut jouer au piano les accords du morceau ([`source/piano.py`](source/piano.py)). Dans l'onglet Plateformes, c'est le réglage par défaut : **piano seul, sans la musique d'origine**.
 
-- **Choix de la note :** à l'instant du rebond, une transformée à Q constant (CQT) repère la note la plus présente dans le morceau, entre C3 et C6. C'est en général la mélodie ou l'accord en cours, donc le piano joue dans la tonalité du morceau. L'octave retenue est la plus proche de la note précédente, pour que la ligne reste liée.
+- **Accords :** entre deux rebonds, l'énergie des 12 notes (chroma, avec correction de l'accordage) est comparée aux 24 accords majeurs et mineurs.
+  - Les accords de la tonalité du morceau, estimée avec les profils de Krumhansl, sont légèrement favorisés.
+  - L'accord ne change que si le nouveau l'emporte nettement.
+  - Exemple : sur *Pirates des Caraïbes*, l'application trouve ré mineur et la grille Dm – Am – Bb – F – C – Gm.
+- **Batterie retirée :** la partie percussive est séparée (HPSS) avant l'analyse, et seuls les vrais pics du spectre comptent. Les accords restent justes même avec une batterie forte ou des notes très courtes.
+- **Pas d'harmonie :** sur un morceau sans harmonie exploitable (batterie seule, voix parlée…), le piano joue une progression par défaut (Am – F – C – G) au lieu d'inventer de faux accords.
+- **Jeu :** l'accord est joué avec sa basse. Les renversements sont choisis pour que les voix bougent le moins possible d'un accord à l'autre.
+- **Note seule :** il est aussi possible de jouer seulement la note dominante, la plus présente à cet instant.
 - **Son :** le piano est synthétisé (harmoniques, attaque de marteau, aigus plus courts). Il ne demande aucun fichier de sons.
-- **Trois réglages :** désactivé, piano + musique, ou piano seul.
-- **Dans l'onglet Plateformes :** chaque plateforme prend la couleur de sa note (une teinte par note) et peut afficher son nom (C4, F#5…).
+- **Réglages :** piano seul, piano + musique ou désactivé ; accords ou note seule ; volume.
+- **Affichage :** dans l'onglet Plateformes, chaque plateforme prend la couleur de la fondamentale de son accord et affiche son nom.
 
 | Service | Rôle |
 |---|---|
 | `frontend` | React (Vite) servi par nginx sur le port 8080, qui redirige `/api` vers l'API |
+| `transcriber` | Sheet Sage 2 : transcription mélodie + accords, modèle chargé une fois, résultats en cache par morceau |
 | `api` | Flask + gunicorn : reçoit la musique, met les rendus en file d'attente, sert les vidéos (les 20 dernières sont conservées) |
 
 ## Rendu simple en ligne de commande (Docker)
@@ -126,8 +153,10 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 .
 ├── docker-compose.yml          # application web (frontend + api)
 ├── Dockerfile                  # image de rendu headless (ligne de commande)
+├── experiments/transcription/  # essais de transcription + notebook de comparaison
 ├── web/
 │   ├── backend/                # API Flask (file d'attente des rendus)
+│   ├── transcriber/            # service Sheet Sage 2
 │   └── frontend/               # interface React + aperçu animé
 ├── requirements-render.txt     # dépendances minimales du rendu (Docker)
 ├── requirements.txt            # dépendances du script interactif d'origine
@@ -136,7 +165,9 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 └── source/
     ├── beat_render.py          # mode Arcs, synchronisé sur la musique (utilisé par l'API)
     ├── platform_render.py      # mode Plateformes, synchronisé sur le tempo (utilisé par l'API)
-    ├── piano.py                # détection des notes et piano synthétisé
+    ├── piano.py                # accords, notes et piano synthétisé
+    ├── transcribe.py           # transcription en notes (Basic Pitch) et regroupement en rebonds
+    ├── sheetsage_client.py     # appel du service de transcription Sheet Sage 2
     ├── check_bounces.py        # mesures du mode Arcs sans générer de vidéo
     ├── render.py               # rendu de la simulation d'origine sans écran
     ├── gen_vidéo_IA.py         # version interactive d'origine (fenêtre + enregistrement)

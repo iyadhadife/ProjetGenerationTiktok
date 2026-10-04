@@ -3,8 +3,19 @@ services:
     build:
       context: .
       dockerfile: web/backend/Dockerfile
+    environment:
+      - TRANSCRIBER_URL=http://transcriber:5001
     volumes:
       - jobs:/data/jobs
+    depends_on:
+      - transcriber
+    restart: unless-stopped
+
+  # Transcription Sheet Sage 2 (mélodie + accords) : image séparée, modèle chargé une fois, résultats en cache
+  transcriber:
+    build: web/transcriber
+    volumes:
+      - transcriber-cache:/cache
     restart: unless-stopped
 
   frontend:
@@ -17,3 +28,4 @@ services:
 
 volumes:
   jobs:
+  transcriber-cache:

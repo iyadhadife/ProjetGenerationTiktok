@@ -1,0 +1,5 @@
+# Image de test : application TikTok + PyTorch (CPU), Pop2Piano (transformers, essentia) et Demucs
+# Base : image de l API construite par docker compose (projetgenerationtiktok-api)
+FROM projetgenerationtiktok-api
+RUN pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir transformers pretty_midi demucs "essentia==2.1b6.dev1110"

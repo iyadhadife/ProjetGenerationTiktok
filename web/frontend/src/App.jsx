@@ -9,7 +9,7 @@ const FALLBACK_DEFAULTS = {
   arc_count: 20, arc_spacing: 25, inner_radius: 200, gap_degrees: 54, rotation_speed: 1.2,
   arc_color_start: '#ff0000', arc_color_end: '#280000', arc_thickness: 7,
   ball_names: ['USA', 'China'], ball_colors: ['#ffffff', '#ffffff'], ball_radius: 20, gravity: 0.6,
-  beats_per_break: 4, min_beat_interval: 0.35, selectivity: 0.4, sensitivity: 0.07, bounce_sound: true, bounce_volume: -6, piano: 'off', piano_volume: -4, seed: null,
+  beats_per_break: 4, min_beat_interval: 0.35, selectivity: 0.4, sensitivity: 0.07, bounce_sound: true, bounce_volume: -6, piano: 'off', piano_voicing: 'chord', piano_volume: -4, seed: null,
 };
 
 export default function App() {
@@ -128,10 +128,18 @@ export default function App() {
             <label className="field"><span>🎹 Notes de piano <small>chaque rebond joue la note de la musique</small></span>
               <select value={params.piano} onChange={(e) => set('piano')(e.target.value)}>
                 <option value="off">Désactivé</option>
+                <option value="solo">Piano seul (sans la musique)</option>
                 <option value="mix">Piano + musique</option>
-                <option value="solo">Piano seul</option>
               </select>
             </label>
+            {params.piano !== 'off' && (
+                  <label className="field"><span>Le piano joue</span>
+                    <select value={params.piano_voicing} onChange={(e) => set('piano_voicing')(e.target.value)}>
+                      <option value="chord">Les accords détectés (+ basse)</option>
+                      <option value="note">La note dominante seule</option>
+                    </select>
+                  </label>
+                )}
             {params.piano !== 'off' && <NumberField label="Volume du piano (dB)" value={params.piano_volume} onChange={set('piano_volume')} min={-24} max={6} />}
           </section>
 

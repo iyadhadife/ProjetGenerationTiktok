@@ -1,0 +1,6 @@
+# Image de base construite depuis Dockerfile.abtest (docker build -t tiktok-abtest -f Dockerfile.abtest .)
+FROM tiktok-abtest
+RUN apt-get update -qq && apt-get install -y -qq git git-lfs >/dev/null && rm -rf /var/lib/apt/lists/*
+RUN pip install --no-cache-dir "lightning>=2.2.1" einops mido deprecated "git+https://github.com/craffel/mir_eval.git"
+RUN pip install --no-cache-dir wandb python-dotenv
+RUN pip install --no-cache-dir "transformers==4.44.2"

@@ -63,12 +63,17 @@ def parse_config(raw, config_class=Config):
     cfg.fps = 30 if cfg.fps <= 30 else 60
     cfg.max_duration = min(max(cfg.max_duration, 3), 180)
     cfg.piano = cfg.piano if cfg.piano in ("off", "mix", "solo") else "off"
+    cfg.piano_voicing = cfg.piano_voicing if cfg.piano_voicing in ("chord", "note") else "chord"
     if config_class is Config:
         cfg.arc_count = min(max(cfg.arc_count, 1), 40)
         cfg.ball_names = cfg.ball_names[:4] or ["Ball"]
     else:
-        cfg.sync = cfg.sync if cfg.sync in ("tempo", "onsets") else "tempo"
+        cfg.sync = cfg.sync if cfg.sync in ("notes", "tempo", "onsets") else "notes"
         cfg.particles = min(max(cfg.particles, 0), 80)
+        cfg.playback_speed = min(max(cfg.playback_speed, 0.25), 1.0)
+        cfg.visual_lead = min(max(cfg.visual_lead, -0.2), 0.2)
+        cfg.piano_content = cfg.piano_content if cfg.piano_content in ("melody", "melody_chords", "all") else "melody_chords"
+        cfg.engine = cfg.engine if cfg.engine in ("sheetsage2", "basic_pitch") else "sheetsage2"
     return cfg
 
 

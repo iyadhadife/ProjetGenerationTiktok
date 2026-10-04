@@ -1,0 +1,6 @@
+0.01	0.52	intro
+0.52	5.63	intro
+5.63	19.27	verse
+19.27	33.81	verse
+33.81	45.7	interlude
+45.7	60.0	interlude

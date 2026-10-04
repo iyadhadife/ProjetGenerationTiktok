@@ -61,7 +61,8 @@ class Config:
     sensitivity: float = 0.07           # seuil de détection (plus bas = plus de temps détectés)
     bounce_sound: bool = True
     bounce_volume: float = -6.0         # dB
-    piano: str = "off"                  # "off", "mix" ou "solo" : chaque rebond joue la note de la musique
+    piano: str = "off"                  # "off", "mix" ou "solo" : chaque rebond joue l'accord ou la note de la musique
+    piano_voicing: str = "chord"        # "chord" (accord détecté + basse) ou "note"
     piano_volume: float = -4.0
     seed: int | None = None
 
@@ -345,10 +346,14 @@ def render(music_path, output, cfg: Config, progress=lambda done, total: None, l
         length_ms = int(frame * 1000 / cfg.fps)
         track = AudioSegment.from_file(music_path)[:length_ms]
         if cfg.piano in ("mix", "solo"):
-            from piano import add_piano, detect_notes
+            from piano import add_piano, detect_chords, detect_notes
             log("🎹 Notes de piano...")
             times = [f / cfg.fps for f in scene.bounce_frames]
-            track = add_piano(track, detect_notes(music_path, times), [t * 1000 for t in times], cfg.piano, cfg.piano_volume)
+            if cfg.piano_voicing == "note":
+                notes = detect_notes(music_path, times)
+            else:
+                notes = [c["notes"] for c in detect_chords(music_path, times)]
+            track = add_piano(track, notes, [t * 1000 for t in times], cfg.piano, cfg.piano_volume)
         if cfg.bounce_sound:
             bounce = AudioSegment.from_file(BOUNCE_SOUND) + cfg.bounce_volume
             for f in scene.bounce_frames:
