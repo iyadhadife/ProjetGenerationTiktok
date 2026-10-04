@@ -4,13 +4,17 @@ Ce document décrit précisément ce qui se passe entre l'envoi d'une musique et
 en particulier la **génération de la partition de piano** et **la façon dont elle est jouée et synchronisée**
 avec les rebonds. Le réglage par défaut est décrit : synchronisation `notes`, moteur `sheetsage2`.
 
+Exemple sur les 10 premières secondes de Pirates des Caraïbes : [vidéo avec le son](demo_pirates_partition.mp4)
+(51 notes de mélodie, 10 accords, 10 notes recalées et 1 paire remise dans l'ordre à l'étape 2).
+
 ```
 musique.mp3
    │
    ▼
-[1] Partition MIDI fournie, calée par DTW si elle correspond au morceau
-    sinon : service de transcription (conteneur transcriber, Sheet Sage 2)
-   │   mélodie (MIDI) + accords (MIDI) + temps + mesures + tonalité  ──► cache par morceau
+[1] Obtenir la partition :
+    1a. partition MIDI fournie, calée sur l'audio par DTW, si elle correspond au morceau
+    1b. sinon, transcription Sheet Sage 2 (conteneur transcriber, résultat en cache par morceau)
+   │   mélodie + accords (notes MIDI) + temps + débuts de mesure + tonalité
    ▼
 [2] Vérification de la partition sur l'audio (source/platform_render.py)
    │   ordre des notes corrigé, chaque note recalée sur son attaque réelle
@@ -33,7 +37,40 @@ musique.mp3
    `render()` de `source/platform_render.py` en arrière-plan. Le frontend suit la progression et les messages.
 3. La vidéo terminée est téléchargeable depuis l'interface.
 
-## 1. Transcription : Sheet Sage 2
+## 1. Obtenir la partition
+
+La partition est d'abord cherchée dans le fichier MIDI fourni (1a) ; s'il n'y en a pas, ou s'il ne correspond
+pas au morceau, elle est transcrite automatiquement (1b).
+
+### 1a. Partition fournie (fichier MIDI, facultatif)
+
+**Fichier :** `source/score_align.py`
+
+Si tu as la partition du morceau (fichier `.mid`, par exemple téléchargé sur MuseScore et exporté en MIDI),
+elle remplace la transcription automatique : **ses notes sont exactes**, il ne reste qu'à les caler sur
+l'enregistrement.
+
+1. **Lecture** (pretty_midi) : les pistes de batterie sont ignorées.
+2. **Alignement global par DTW** (Dynamic Time Warping) :
+   - audio : chroma CENS (énergie des 12 notes do, do#… lissée sur ~1 s) de la partie harmonique ;
+   - partition : chroma calculé directement depuis les notes, avec le même lissage ;
+   - la DTW trouve le chemin qui fait correspondre chaque instant de la partition à un instant de
+     l'enregistrement (tempo différent, ralentis, introduction…). Chaque note est déplacée le long de ce chemin.
+   - Mesuré sur un test (partition jouée 8 % plus lentement et décalée de 2 s) : erreur médiane de 71 ms,
+     ensuite corrigée par le recalage sur les attaques (étape 2, fenêtre élargie à ±0,2 s pour une partition).
+3. **Mélodie** : une piste nommée comme une mélodie (`melody`, `lead`, `vocal`, `flute`, `violin`…) est prise
+   telle quelle ; sinon on prend la note la plus aiguë à chaque instant. Tout le reste devient l'accompagnement.
+4. **Temps et mesures** : ceux de la partition, déplacés de la même façon (pulsation du fond, zoom de mesure).
+5. **Contrôles : la partition est utilisée seulement si elle est bonne**
+   - elle doit couvrir le morceau (entre 60 % et 160 % de sa durée) ;
+   - écart moyen d'alignement ≤ 0,35 (`score_max_cost`) ;
+   - au moins 50 % des notes de la mélodie doivent **s'entendre** dans l'audio à leur instant : leur note
+     (do, ré…) doit être parmi les 3 plus présentes. Au hasard, on obtient ~25 %.
+     Test (partition fabriquée à partir de la transcription des 30 premières secondes, ralentie de 8 % et
+     décalée de 2 s) : 59 %, acceptée ; la même transposée de 5 demi-tons : 38 %, rejetée.
+   - Sinon : message dans le journal et retour automatique à Sheet Sage 2.
+
+### 1b. Sans partition : transcription Sheet Sage 2
 
 **Fichiers :** `web/transcriber/server.py`, `source/sheetsage_client.py`
 
@@ -59,37 +96,11 @@ musique.mp3
 temps détectés. Si cette grille dérive légèrement, des notes arrivent en retard, ou deux notes voisines sont
 inversées. C'est ce que corrige l'étape suivante.
 
-## 1 bis. Partition fournie (fichier MIDI, facultatif)
-
-**Fichier :** `source/score_align.py`
-
-Si tu as la partition du morceau (fichier `.mid`, par exemple téléchargé sur MuseScore et exporté en MIDI),
-elle remplace la transcription automatique : **ses notes sont exactes**, il ne reste qu'à les caler sur
-l'enregistrement.
-
-1. **Lecture** (pretty_midi) : les pistes de batterie sont ignorées.
-2. **Alignement global par DTW** (Dynamic Time Warping) :
-   - audio : chroma CENS (énergie des 12 notes do, do#… lissée sur ~1 s) de la partie harmonique ;
-   - partition : chroma calculé directement depuis les notes, avec le même lissage ;
-   - la DTW trouve le chemin qui fait correspondre chaque instant de la partition à un instant de
-     l'enregistrement (tempo différent, ralentis, introduction…). Chaque note est déplacée le long de ce chemin.
-   - Mesuré sur un test (partition jouée 8 % plus lentement et décalée de 2 s) : erreur médiane de 71 ms,
-     ensuite corrigée par le recalage sur les attaques (étape 2, fenêtre élargie à ±0,2 s).
-3. **Mélodie** : une piste nommée comme une mélodie (`melody`, `lead`, `vocal`, `flute`, `violin`…) est prise
-   telle quelle ; sinon on prend la note la plus aiguë à chaque instant. Tout le reste devient l'accompagnement.
-4. **Contrôles : la partition est utilisée seulement si elle est bonne**
-   - elle doit couvrir le morceau (entre 60 % et 160 % de sa durée) ;
-   - écart moyen d'alignement ≤ 0,35 (`score_max_cost`) ;
-   - au moins 50 % des notes de la mélodie doivent **s'entendre** dans l'audio à leur instant : leur note
-     (do, ré…) doit être parmi les 3 plus présentes. Au hasard, on obtient ~25 %.
-     Test : bonne partition 59 %, partition transposée 38 %, donc rejetée.
-   - Sinon : message dans le journal et retour automatique à Sheet Sage 2.
-
 ## 2. Vérification de la partition sur l'audio
 
 **Fichier :** `source/platform_render.py` (`PitchSalience`, `refine_melody`, `snap_to_onsets`)
 
-On confronte la partition à l'enregistrement lui-même :
+Cette étape s'applique aux deux sources de partition. On confronte la partition à l'enregistrement lui-même :
 
 1. **Carte des hauteurs (`PitchSalience`)**
    - Séparation harmonique / percussive (HPSS) : on retire la batterie, qui brouillerait les hauteurs.
@@ -100,7 +111,7 @@ On confronte la partition à l'enregistrement lui-même :
 2. **Ordre des notes** : pour deux notes successives proches (< 0,4 s), on compare l'audio avec l'ordre
    transcrit et avec l'ordre inversé. Si l'ordre inversé correspond **nettement** mieux (+6 dB), on échange
    les deux hauteurs.
-3. **Moment de chaque note** : parmi les attaques réelles à ±120 ms, on choisit celle où **la hauteur de
+3. **Moment de chaque note** : parmi les attaques réelles à ±120 ms (±200 ms pour une partition fournie), on choisit celle où **la hauteur de
    cette note** apparaît le plus nettement, avec une légère préférence pour l'attaque la plus proche et un
    petit bonus pour ne pas bouger. Deux notes successives ne sont jamais rapprochées à moins de l'écart
    minimum entre rebonds : les traits rapides restent distincts.
@@ -116,8 +127,9 @@ Le journal affiche par exemple : `29 notes recalées, 6 paires remises dans l'or
 - Des notes qui commencent à moins de 60 ms d'écart forment un seul rebond (une note double ou un accord).
 - Deux rebonds sont séparés d'au moins `note_min_gap` (0,07 s par défaut, réglable jusqu'à 0,04 s) ;
   une note plus proche rejoint le rebond précédent, mais **reste jouée à son vrai moment** dans la bande-son.
-- Chaque rebond reçoit le nom de sa note la plus aiguë (affiché sur la plateforme) et la fondamentale de
-  l'accord en cours, qui donne la couleur de la plateforme (12 couleurs, une par note).
+- Chaque rebond reçoit le nom de sa note la plus aiguë (affiché sur la plateforme). Sa couleur (12 couleurs,
+  une par note) vient de la fondamentale de l'accord en cours donné par Sheet Sage ; avec une partition MIDI,
+  qui n'a pas de noms d'accords, elle vient de la note du rebond.
 - Le fond pulse sur chaque temps, et la caméra zoome brièvement à chaque début de mesure.
 
 ## 4. Trajectoire de la balle
@@ -149,7 +161,7 @@ Le journal affiche par exemple : `29 notes recalées, 6 paires remises dans l'or
 **Fichier :** `source/piano.py` (`piano_wave`, `add_transcription`)
 
 - **Contenu joué** (`piano_content`) : `melody` (mélodie seule), `melody_chords` (mélodie + accords plus
-  doux, à 45 % d'intensité, par défaut) ou `all`.
+  doux, à 45 % d'intensité, par défaut) ou `all` (mélodie + accords à pleine intensité).
 - **Synthèse** : aucun échantillon n'est utilisé ; chaque note est calculée :
   - 8 harmoniques, de plus en plus faibles, avec la légère **inharmonicité** des cordes de piano ;
   - attaque de 4 ms et petit bruit de **marteau** au début de la note ;
