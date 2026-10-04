@@ -1,0 +1,19 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: web/backend/Dockerfile
+    volumes:
+      - jobs:/data/jobs
+    restart: unless-stopped
+
+  frontend:
+    build: web/frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  jobs:
