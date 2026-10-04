@@ -11,13 +11,15 @@ import numpy as np
 from audio_image_scripts.color import generate_rgb_gradient, create_gradient_backward_surface
 from audio_image_scripts.merging_audio_video import charger_video, record_audio
 
-#video and audio paths
-audio_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\MusiqueChill1\Free.mp3"
-video_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation.mp4"
-audio_temp = r"C:\Users\ihadi\Desktop\VideoResultTikTok\corbeille\my_simulation_wav.wav"
-# Chemin vers ton fichier son
-ball_bouncing_sound_path = r"C:\Users\ihadi\Desktop\ProjetGenerationTiktok\bin\bouncing_sound\bouncing_ball_v1.mp3"
+import os
+os.environ["SDL_AUDIODRIVER"] = "dummy"
 
+#video and audio paths
+audio_path = r"../bin/MusiqueChill1/Free.mp3"
+video_temp = r"../VideoResult/my_simulation.avi"
+audio_temp = r"../VideoResult/my_simulation_wav.wav"
+# Chemin vers ton fichier son
+ball_bouncing_sound_path = r"../bin/bouncing_sound/bouncing_ball_v1.mp3"
 #video parameters
 ips = 60
 W,H = 1080, 1920
@@ -54,8 +56,8 @@ try:
                 radius=starting_radius_ball, 
                 color=(255,255,255), 
                 restitution=1, 
-                x_speed=3, 
-                y_speed=4, 
+                x_speed=1, 
+                y_speed=1, 
                 mass=1,
                 trail_length=20,
                 bool_trail=bool_trail,
@@ -66,8 +68,8 @@ try:
                 radius=starting_radius_ball, 
                 color=(255,255,255), 
                 restitution=1, 
-                x_speed=3, 
-                y_speed=4, 
+                x_speed=1, 
+                y_speed=1, 
                 mass=1,
                 trail_length=20,
                 bool_trail=bool_trail,
@@ -91,7 +93,6 @@ try:
     ball_bouncing_sound = pygame.mixer.Sound(ball_bouncing_sound_path)
     pygame.mixer.music.play()
     start_time = time.time()
-
     # Main loop
     while True:
         for e in pygame.event.get():
@@ -109,7 +110,7 @@ try:
         for num, wall in enumerate(walls):
             wall.draw(screen)
             if num == 0:
-                destroy = ball.check_collision_and_gravity_on_circles(wall, ball2, ball_bouncing_sound=ball_bouncing_sound)
+                destroy = ball.check_collision_and_gravity_on_circles(wall, ball2)#, ball_bouncing_sound=ball_bouncing_sound)
                 if destroy:
                     walls.remove(wall)
                     for wall in walls:
@@ -127,13 +128,16 @@ try:
         for num, wall in enumerate(walls):
             wall.draw(screen)
             if num == 0:
-                destroy = ball2.check_collision_and_gravity_on_circles(wall, ball, ball_bouncing_sound=ball_bouncing_sound)
+                destroy = ball2.check_collision_and_gravity_on_circles(wall, ball)#, ball_bouncing_sound=ball_bouncing_sound)
                 if destroy:
                     walls.remove(wall)
                     for wall in walls:
                         wall.radius -= radius_step
 
         bool_wallmoving = False
+        if len(walls) == 0 :
+            pygame.quit()
+            sys.exit()
         if walls[0].radius > starting_radius:
             bool_wallmoving = True
             ball.wall_broken = 0

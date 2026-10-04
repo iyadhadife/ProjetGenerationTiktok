@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+VideoResult/
+*.mp4
+.git/
+web/frontend/node_modules
