@@ -2,10 +2,10 @@
 API du générateur : reçoit une musique et des paramètres, lance le rendu en arrière-plan
 et sert la vidéo une fois prête.
 
-POST /api/render            multipart : music (fichier audio), params (JSON de Config)  -> {id}
+POST /api/render            multipart : music (fichier audio), mode (arcs | platforms), params (JSON)  -> {id}
 GET  /api/jobs/<id>         état du rendu : queued | running | done | error, progression, logs
 GET  /api/jobs/<id>/video   la vidéo .mp4 (?download=1 pour la télécharger)
-GET  /api/defaults          paramètres par défaut (pour pré-remplir le formulaire)
+GET  /api/defaults          paramètres par défaut de chaque mode (pour pré-remplir les formulaires)
 """
 import json
 import os
@@ -21,6 +21,9 @@ from flask import Flask, jsonify, request, send_file
 
 sys.path.insert(0, os.environ.get("RENDER_SOURCE", os.path.join(os.path.dirname(__file__), "..", "..", "source")))
 from beat_render import Config, render  # noqa: E402
+from platform_render import PlatformConfig, render as render_platforms  # noqa: E402
+
+MODES = {"arcs": (Config, render), "platforms": (PlatformConfig, render_platforms)}
 
 JOBS_DIR = os.environ.get("JOBS_DIR", os.path.join(os.path.dirname(__file__), "jobs"))
 ALLOWED_AUDIO = {".mp3", ".wav", ".ogg", ".flac", ".m4a", ".aac"}
@@ -34,12 +37,12 @@ pending = queue.Queue()
 os.makedirs(JOBS_DIR, exist_ok=True)
 
 
-def parse_config(raw):
-    """Construit une Config en ne gardant que les champs connus, convertis au bon type."""
+def parse_config(raw, config_class=Config):
+    """Construit la configuration du mode en ne gardant que les champs connus, convertis au bon type."""
     data = json.loads(raw or "{}")
-    defaults = asdict(Config())
+    defaults = asdict(config_class())
     values = {}
-    for f in fields(Config):
+    for f in fields(config_class):
         if f.name not in data or data[f.name] in (None, ""):
             continue
         value, default = data[f.name], defaults[f.name]
@@ -55,12 +58,17 @@ def parse_config(raw):
             values[f.name] = int(value)
         else:
             values[f.name] = str(value)[:60]
-    cfg = Config(**values)
+    cfg = config_class(**values)
     # Garde-fous : un rendu trop long ou trop lourd bloquerait la file d'attente
     cfg.fps = 30 if cfg.fps <= 30 else 60
     cfg.max_duration = min(max(cfg.max_duration, 3), 180)
-    cfg.arc_count = min(max(cfg.arc_count, 1), 40)
-    cfg.ball_names = cfg.ball_names[:4] or ["Ball"]
+    cfg.piano = cfg.piano if cfg.piano in ("off", "mix", "solo") else "off"
+    if config_class is Config:
+        cfg.arc_count = min(max(cfg.arc_count, 1), 40)
+        cfg.ball_names = cfg.ball_names[:4] or ["Ball"]
+    else:
+        cfg.sync = cfg.sync if cfg.sync in ("tempo", "onsets") else "tempo"
+        cfg.particles = min(max(cfg.particles, 0), 80)
     return cfg
 
 
@@ -71,7 +79,7 @@ def worker():
         job.update(status="running", started=time.time())
         folder = os.path.join(JOBS_DIR, job_id)
         try:
-            job["result"] = render(
+            job["result"] = MODES[job["mode"]][1](
                 job["music"], os.path.join(folder, "tiktok.mp4"), job["config"],
                 progress=lambda done, total: job.update(progress=round(done / max(total, 1), 3)),
                 log=lambda message: job["logs"].append(message),
@@ -97,7 +105,7 @@ threading.Thread(target=worker, daemon=True).start()
 
 @app.get("/api/defaults")
 def defaults():
-    return jsonify(asdict(Config()))
+    return jsonify({mode: asdict(config_class()) for mode, (config_class, _) in MODES.items()})
 
 
 @app.post("/api/render")
@@ -108,8 +116,11 @@ def create_job():
     ext = os.path.splitext(music.filename)[1].lower()
     if ext not in ALLOWED_AUDIO:
         return jsonify(error=f"Format non pris en charge ({ext}). Formats acceptés : {', '.join(sorted(ALLOWED_AUDIO))}"), 400
+    mode = request.form.get("mode", "arcs")
+    if mode not in MODES:
+        return jsonify(error=f"Mode inconnu : {mode}"), 400
     try:
-        cfg = parse_config(request.form.get("params"))
+        cfg = parse_config(request.form.get("params"), MODES[mode][0])
     except (ValueError, TypeError) as error:
         return jsonify(error=f"Paramètres invalides : {error}"), 400
 
@@ -119,7 +130,7 @@ def create_job():
     path = os.path.join(folder, "music" + ext)
     music.save(path)
     jobs[job_id] = {"id": job_id, "status": "queued", "progress": 0, "logs": [], "music": path,
-                    "config": cfg, "created": time.time(), "name": music.filename}
+                    "config": cfg, "mode": mode, "created": time.time(), "name": music.filename}
     pending.put(job_id)
     return jsonify(id=job_id), 202
 
@@ -130,7 +141,7 @@ def job_status(job_id):
     if not job:
         return jsonify(error="Rendu introuvable"), 404
     position = list(pending.queue).index(job_id) + 1 if job["status"] == "queued" and job_id in pending.queue else 0
-    return jsonify({k: job.get(k) for k in ("id", "status", "progress", "logs", "error", "result", "name")}
+    return jsonify({k: job.get(k) for k in ("id", "status", "progress", "logs", "error", "result", "name", "mode")}
                    | {"queue_position": position})
 
 

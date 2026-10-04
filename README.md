@@ -24,15 +24,18 @@ Ouvre ensuite http://localhost:8080.
 
 1. Glisse ta musique (mp3, wav, ogg, flac ou m4a, 50 Mo maximum).
 2. Règle les paramètres. Un aperçu animé se met à jour en direct.
-   - **Synchronisation** : sensibilité de détection des temps forts, écart minimum entre deux rebonds, fréquence de destruction des arcs, son de rebond.
+   - **Synchronisation** : sensibilité de détection, sélectivité (garder seulement les temps les plus forts), écart minimum entre deux rebonds, fréquence de destruction des arcs, son de rebond.
    - **Vidéo** : titre, durée maximale, 30 ou 60 ips, couleur de fond.
    - **Arcs** : nombre, rayon, espacement, ouverture, vitesse de rotation, épaisseur, dégradé de couleurs.
    - **Balles** : 1 à 4 balles, avec nom et couleur, taille, gravité, graine aléatoire.
 3. Clique sur **Générer la vidéo**. Une barre de progression s'affiche, puis la vidéo apparaît avec un bouton de téléchargement.
 
 **Comment les rebonds suivent la musique** ([`source/beat_render.py`](source/beat_render.py)) :
-- librosa détecte les temps forts (*onsets*) du morceau, et les balles se les partagent à tour de rôle.
-- Entre deux temps, la trajectoire de chaque balle est une parabole calculée pour toucher l'arc intérieur exactement au temps suivant. La gravité est réduite si la courbe devait sortir du cercle.
+- librosa détecte les temps forts (*onsets*) du morceau et mesure leur force. Sur un morceau rapide, seuls les meilleurs sont gardés : les plus faibles sont écartés (**sélectivité**), et quand deux temps sont trop proches, le plus fort l'emporte (**écart minimum**). Les balles se partagent ensuite les temps retenus à tour de rôle.
+- Après chaque rebond, la balle repart sous l'effet de la gravité. Parmi des dizaines de points d'impact possibles, le moteur choisit la parabole qui touche l'arc exactement au temps suivant et ressemble le plus au vrai rebond physique (réflexion sur la paroi).
+- La gravité est adaptée au tempo pour que les vols soient de vraies paraboles. Le réglage de gravité sert de maximum.
+- Quand il n'y a plus de temps fort à viser, les balles continuent en vol libre avec rebonds : elles ne s'arrêtent jamais.
+- `python source/check_bounces.py musique.mp3` affiche, sans générer de vidéo, le nombre de temps retenus, la part de trajectoires sous gravité réelle et la vitesse minimale des balles.
 - En moyenne un rebond sur N (par tirage aléatoire), la balle vise l'ouverture : elle traverse l'arc, le détruit et marque un point.
 
 Le moteur s'utilise aussi en ligne de commande :
@@ -41,6 +44,29 @@ Le moteur s'utilise aussi en ligne de commande :
 cd source
 python beat_render.py ma_musique.mp3 --max-duration 30 --title "Qui va gagner ?"
 ```
+
+### Mode « Plateformes »
+
+Deuxième onglet de l'interface : une balle tombe sous gravité et rebondit sur des plateformes qui apparaissent au bon endroit, **sur le tempo du morceau** ([`source/platform_render.py`](source/platform_render.py)).
+
+- **Rythme :** librosa détecte la pulsation (BPM). La balle rebondit tous les 1, 2 ou 4 temps selon l'écart minimum choisi, calée sur les temps les plus forts. Un mode « attaques » suit plutôt les temps forts les plus marqués.
+- **Plateformes :** chacune est orientée pour renvoyer la balle vers la suivante. La trajectoire est une vraie parabole sous gravité constante.
+- **Effets :** apparition des plateformes avec ralenti de fin de mouvement, puis flash, onde de choc, particules et tremblement à l'impact. S'y ajoutent la traînée lumineuse, la caméra qui suit la balle, le fond qui pulse sur chaque temps, un petit zoom à chaque mesure et des couleurs en dégradé.
+- **Réglages :** tous ces effets se règlent dans l'onglet.
+
+```bash
+cd source
+python platform_render.py ma_musique.mp3 --max-duration 30
+```
+
+### Notes de piano
+
+Chaque rebond peut jouer une note de piano qui suit la musique ([`source/piano.py`](source/piano.py)). Cette option est disponible dans les deux onglets.
+
+- **Choix de la note :** à l'instant du rebond, une transformée à Q constant (CQT) repère la note la plus présente dans le morceau, entre C3 et C6. C'est en général la mélodie ou l'accord en cours, donc le piano joue dans la tonalité du morceau. L'octave retenue est la plus proche de la note précédente, pour que la ligne reste liée.
+- **Son :** le piano est synthétisé (harmoniques, attaque de marteau, aigus plus courts). Il ne demande aucun fichier de sons.
+- **Trois réglages :** désactivé, piano + musique, ou piano seul.
+- **Dans l'onglet Plateformes :** chaque plateforme prend la couleur de sa note (une teinte par note) et peut afficher son nom (C4, F#5…).
 
 | Service | Rôle |
 |---|---|
@@ -108,7 +134,10 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 ├── bin/                        # musique et son de rebond
 ├── docs/                       # démo (GIF et MP4)
 └── source/
-    ├── beat_render.py          # moteur synchronisé sur la musique (utilisé par l'API)
+    ├── beat_render.py          # mode Arcs, synchronisé sur la musique (utilisé par l'API)
+    ├── platform_render.py      # mode Plateformes, synchronisé sur le tempo (utilisé par l'API)
+    ├── piano.py                # détection des notes et piano synthétisé
+    ├── check_bounces.py        # mesures du mode Arcs sans générer de vidéo
     ├── render.py               # rendu de la simulation d'origine sans écran
     ├── gen_vidéo_IA.py         # version interactive d'origine (fenêtre + enregistrement)
     ├── bouncing1v1/            # physique : balles et arcs
