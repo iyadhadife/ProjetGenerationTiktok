@@ -10,11 +10,46 @@ Deux balles rebondissent à l'intérieur de 20 arcs de cercle concentriques qui 
   <img src="docs/demo.gif" alt="Démo : deux balles détruisent des arcs de cercle concentriques" width="320">
 </p>
 
-Version complète, avec le son : [docs/demo.mp4](docs/demo.mp4)
+Chaque rebond tombe sur un temps fort de la musique. Version avec le son : [docs/demo.mp4](docs/demo.mp4)
 
-## Lancer avec Docker (recommandé)
+## Application web : rebonds synchronisés sur ta musique
 
-Il n'y a ni écran ni carte son à configurer : la vidéo est calculée image par image dans le conteneur.
+Une interface React permet d'importer n'importe quelle musique et de régler les paramètres. La vidéo TikTok est ensuite générée automatiquement :
+
+```bash
+docker compose up -d --build
+```
+
+Ouvre ensuite http://localhost:8080.
+
+1. Glisse ta musique (mp3, wav, ogg, flac ou m4a, 50 Mo maximum).
+2. Règle les paramètres. Un aperçu animé se met à jour en direct.
+   - **Synchronisation** : sensibilité de détection des temps forts, écart minimum entre deux rebonds, fréquence de destruction des arcs, son de rebond.
+   - **Vidéo** : titre, durée maximale, 30 ou 60 ips, couleur de fond.
+   - **Arcs** : nombre, rayon, espacement, ouverture, vitesse de rotation, épaisseur, dégradé de couleurs.
+   - **Balles** : 1 à 4 balles, avec nom et couleur, taille, gravité, graine aléatoire.
+3. Clique sur **Générer la vidéo**. Une barre de progression s'affiche, puis la vidéo apparaît avec un bouton de téléchargement.
+
+**Comment les rebonds suivent la musique** ([`source/beat_render.py`](source/beat_render.py)) :
+- librosa détecte les temps forts (*onsets*) du morceau, et les balles se les partagent à tour de rôle.
+- Entre deux temps, la trajectoire de chaque balle est une parabole calculée pour toucher l'arc intérieur exactement au temps suivant. La gravité est réduite si la courbe devait sortir du cercle.
+- En moyenne un rebond sur N (par tirage aléatoire), la balle vise l'ouverture : elle traverse l'arc, le détruit et marque un point.
+
+Le moteur s'utilise aussi en ligne de commande :
+
+```bash
+cd source
+python beat_render.py ma_musique.mp3 --max-duration 30 --title "Qui va gagner ?"
+```
+
+| Service | Rôle |
+|---|---|
+| `frontend` | React (Vite) servi par nginx sur le port 8080, qui redirige `/api` vers l'API |
+| `api` | Flask + gunicorn : reçoit la musique, met les rendus en file d'attente, sert les vidéos (les 20 dernières sont conservées) |
+
+## Rendu simple en ligne de commande (Docker)
+
+Ce mode rejoue la simulation d'origine, sans synchronisation sur la musique. Il n'y a ni écran ni carte son à configurer : la vidéo est calculée image par image dans le conteneur.
 
 ```bash
 docker build -t tiktok-generator .
@@ -63,13 +98,18 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 
 ```
 .
-├── Dockerfile                  # image de rendu headless
+├── docker-compose.yml          # application web (frontend + api)
+├── Dockerfile                  # image de rendu headless (ligne de commande)
+├── web/
+│   ├── backend/                # API Flask (file d'attente des rendus)
+│   └── frontend/               # interface React + aperçu animé
 ├── requirements-render.txt     # dépendances minimales du rendu (Docker)
 ├── requirements.txt            # dépendances du script interactif d'origine
 ├── bin/                        # musique et son de rebond
 ├── docs/                       # démo (GIF et MP4)
 └── source/
-    ├── render.py               # point d'entrée : génère la vidéo sans écran
+    ├── beat_render.py          # moteur synchronisé sur la musique (utilisé par l'API)
+    ├── render.py               # rendu de la simulation d'origine sans écran
     ├── gen_vidéo_IA.py         # version interactive d'origine (fenêtre + enregistrement)
     ├── bouncing1v1/            # physique : balles et arcs
     ├── audio_image_scripts/    # dégradés de couleurs, fusion audio/vidéo
@@ -78,4 +118,4 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 
 ## Technologies
 
-Python, Pygame, NumPy, pydub, ffmpeg (imageio-ffmpeg), Docker
+Python, Pygame, librosa, NumPy, pydub, ffmpeg (imageio-ffmpeg), Flask, React, Vite, nginx, Docker Compose

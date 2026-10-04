@@ -3,3 +3,4 @@ __pycache__/
 VideoResult/
 *.mp4
 .git/
+web/frontend/node_modules
