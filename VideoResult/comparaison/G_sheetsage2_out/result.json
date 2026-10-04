@@ -1,0 +1,49 @@
+{
+  "audio": "extrait.wav",
+  "duration_seconds": 60.0,
+  "prompts": [
+    "timestamp",
+    "downbeat_meter",
+    "structure",
+    "key",
+    "chord_full",
+    "melody_full"
+  ],
+  "preset": "default",
+  "melody_only": false,
+  "dtype": "fp32",
+  "window_seconds": 300.0,
+  "overlap_seconds": 200.0,
+  "lookahead_seconds": 100.0,
+  "windows": [
+    {
+      "start": 0.0,
+      "end": 60.0,
+      "accept_start": 0.0,
+      "accept_end": 60.0,
+      "prefix_end": 0.0,
+      "generation_stop": null,
+      "window_index": 0,
+      "prefix_tokens": 0,
+      "tokens": 1057,
+      "events": 311,
+      "accepted_events": 311,
+      "elapsed_seconds": 106.49732347400277
+    }
+  ],
+  "elapsed_seconds": 107.89387777900265,
+  "warnings": [],
+  "peak_gpu_mib": 0,
+  "melody_notes": 245,
+  "vocal_notes": 0,
+  "instrumental_notes": 245,
+  "events": 311,
+  "abc_measures": 38,
+  "abc_error": null,
+  "diagnostics": [
+    "measure 0: inferred 1/4 from downbeat span; declared numerators were [4]",
+    "measure 19: inferred 2/4 from downbeat span; declared numerators were [4, 4]",
+    "measure 28: inferred 1/4 from downbeat span; declared numerators were [4]",
+    "measure 0: padded leading 1/4 span to 4/4 with preceding rest"
+  ]
+}

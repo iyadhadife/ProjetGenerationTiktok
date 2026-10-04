@@ -87,3 +87,10 @@ button:disabled { opacity: 0.6; cursor: wait; }
 .bar > div { height: 100%; background: linear-gradient(90deg, var(--accent-2), var(--accent)); transition: width 0.4s; }
 
 .error { color: #ff6b81; font-size: 0.9rem; }
+
+.tabs { display: flex; gap: 8px; margin: -8px 0 20px; }
+.tabs button {
+  width: auto; padding: 10px 18px; border-radius: 99px; font-size: 0.95rem;
+  background: var(--panel); color: var(--muted); border: 1px solid var(--border);
+}
+.tabs button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
