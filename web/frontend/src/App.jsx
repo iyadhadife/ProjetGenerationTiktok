@@ -17,6 +17,7 @@ export default function App() {
   const [params, setParams] = useState(FALLBACK_DEFAULTS);
   const [platformParams, setPlatformParams] = useState(PLATFORM_DEFAULTS);
   const [music, setMusic] = useState(null);
+  const [score, setScore] = useState(null);
   const [job, setJob] = useState(null);
   const [error, setError] = useState('');
   const [dragging, setDragging] = useState(false);
@@ -72,6 +73,7 @@ export default function App() {
     setError('');
     const form = new FormData();
     form.append('music', music);
+    if (mode === 'platforms' && score) form.append('score', score);
     form.append('mode', mode);
     form.append('params', JSON.stringify(mode === 'arcs' ? params : platformParams));
     const res = await fetch('/api/render', { method: 'POST', body: form });
@@ -109,6 +111,15 @@ export default function App() {
                 : <><strong>Glisse ta musique ici</strong><small>ou clique pour choisir (mp3, wav, ogg, flac, m4a – 50 Mo max)</small></>}
             </label>
             {musicUrl && <audio controls src={musicUrl} />}
+            {mode === 'platforms' && (
+              <label className="field">
+                <span>Partition MIDI (facultatif)</span>
+                <input type="file" accept=".mid,.midi,audio/midi" onChange={(e) => setScore(e.target.files[0] || null)} />
+                <small>{score ? `${score.name} : calée automatiquement sur la musique, utilisée si elle correspond`
+                  : 'Si tu as la partition du morceau, ses notes exactes remplacent la transcription automatique'}</small>
+                {score && <button type="button" onClick={() => setScore(null)}>Retirer la partition</button>}
+              </label>
+            )}
           </section>
 
           {mode === 'platforms' ? (

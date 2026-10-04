@@ -140,6 +140,8 @@ Le script d'origine `source/gen_vidéo_IA.py` reste disponible. Il affiche la si
 
 ## Comment ça marche
 
+> Fonctionnement détaillé de l'onglet Plateformes (transcription, vérification de la partition, rebonds, piano) : [docs/FONCTIONNEMENT.md](docs/FONCTIONNEMENT.md)
+
 1. **Simulation** ([`source/bouncing1v1`](source/bouncing1v1)) :
    - `Ball` gère la gravité, les rebonds et les collisions élastiques entre les deux balles (calcul d'impulsion le long de la normale).
    - `ArcWall` détecte si une balle touche l'arc ou passe par son ouverture.

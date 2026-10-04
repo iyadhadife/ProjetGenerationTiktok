@@ -86,6 +86,9 @@ class PlatformConfig:
     # Avance de l'image sur le son (s) : l'œil perçoit le rebond un peu après le contact, et l'impact est
     # arrondi à l'image près ; montrer le contact légèrement en avance le fait tomber pile sur la note
     visual_lead: float = 0.06
+    # Partition MIDI fournie (chemin, rempli par l'API) : utilisée si elle colle à l'enregistrement
+    score_path: str = ""
+    score_max_cost: float = 0.35         # au-delà, la partition est jugée différente du morceau
     seed: int | None = None
 
 
@@ -122,39 +125,91 @@ def accompaniment(all_notes, melody):
     return result
 
 
-def snap_to_onsets(music_path, notes, span, window=0.08):
-    """Recale chaque note sur l'attaque réelle la plus proche du morceau (à `window` s près).
+class PitchSalience:
+    """Présence de chaque note (MIDI) dans le morceau au cours du temps, pour vérifier la partition.
+
+    Spectre à demi-ton près (CQT) sur la partie harmonique du morceau (sans la batterie), en dB.
+    `attack(midi, t)` mesure combien la note se renforce juste après t : élevé si la note y est attaquée.
+    """
+    LOW = 24                                                 # C1
+
+    def __init__(self, music_path, span):
+        import librosa
+        self.sr, self.hop = 22050, 256
+        y, _ = librosa.load(music_path, sr=self.sr, mono=True, duration=span + 1)
+        harmonic = librosa.effects.harmonic(y, margin=2.0)
+        cqt = np.abs(librosa.cqt(harmonic, sr=self.sr, hop_length=self.hop, fmin=librosa.midi_to_hz(self.LOW),
+                                 n_bins=84, bins_per_octave=12))
+        self.db = librosa.amplitude_to_db(cqt, ref=np.max)
+        self.onsets = librosa.onset.onset_detect(y=y, sr=self.sr, hop_length=self.hop, units="time")
+
+    def _band(self, midi, t0, t1):
+        b = int(midi) - self.LOW
+        if not 0 <= b < self.db.shape[0]:
+            return -80.0
+        f0, f1 = int(t0 * self.sr / self.hop), int(t1 * self.sr / self.hop)
+        f0, f1 = max(f0, 0), min(max(f1, f0 + 1), self.db.shape[1])
+        return float(self.db[b, f0:f1].mean()) if f1 > f0 else -80.0
+
+    def attack(self, midi, t, width=0.07):
+        return self._band(midi, t + 0.01, t + width) - self._band(midi, t - width, t - 0.01)
+
+    def presence(self, midi, t, width=0.1):
+        return self._band(midi, t + 0.01, t + width)
+
+
+def refine_melody(sal, notes, window=0.12, min_gap=0.085):
+    """Recale la mélodie sur l'audio, note par note, en tenant compte de sa hauteur.
 
     Sheet Sage 2 aligne ses notes sur une grille de doubles croches déduite des temps : quand cette grille
-    dérive un peu, les notes tombent à côté des vraies attaques. On les ramène sur l'audio.
+    dérive, une note arrive en retard, ou deux notes voisines sont jouées dans le mauvais ordre.
+    1. Ordre : si deux notes successives « collent » mieux à l'audio échangées, on les échange.
+    2. Moment : chaque note va sur l'attaque réelle voisine (±window) où SA hauteur apparaît le plus nettement,
+       sans jamais s'approcher à moins de min_gap de ses voisines (les traits rapides restent distincts).
     """
-    import librosa
-    y, sr = librosa.load(music_path, sr=22050, mono=True, duration=span + 1)
-    onsets = librosa.onset.onset_detect(y=y, sr=sr, hop_length=256, units="time")
-    if not len(onsets):
-        return notes, 0
-    snapped, moved = [], 0
-    last_orig = last_new = None                             # dernière note distincte : début d'origine et recalé
     notes = sorted(notes, key=lambda n: n.start)
-    starts = np.array([n.start for n in notes])
+    swapped = 0
+    for i in range(len(notes) - 1):
+        a, b = notes[i], notes[i + 1]
+        if a.midi == b.midi or b.start - a.start > 0.4:
+            continue
+        keep = sal.presence(a.midi, a.start) + sal.presence(b.midi, b.start)
+        swap = sal.presence(b.midi, a.start) + sal.presence(a.midi, b.start)
+        if swap > keep + 6:                                  # nettement mieux échangées (6 dB)
+            notes[i] = type(a)(a.start, a.end, b.midi, a.velocity)
+            notes[i + 1] = type(b)(b.start, b.end, a.midi, b.velocity)
+            swapped += 1
+    moved, result = 0, []
+    starts = [n.start for n in notes]
+    for i, n in enumerate(notes):
+        before = result[-1].start if result else -math.inf
+        after = starts[i + 1] if i + 1 < len(notes) else math.inf
+        candidates = [t for t in sal.onsets if abs(t - n.start) <= window
+                      and t - before >= min_gap and after - t >= min_gap]
+        best, best_score = n.start, sal.attack(n.midi, n.start) - 1.0   # petit bonus à ne pas bouger
+        for t in candidates:
+            score = sal.attack(n.midi, t) - 20 * abs(t - n.start)        # préfère l'attaque la plus proche
+            if score > best_score:
+                best, best_score = t, score
+        moved += abs(best - n.start) > 0.02
+        shift = best - n.start
+        result.append(type(n)(best, max(n.end + shift, best + 0.05), n.midi, n.velocity))
+    return result, moved, swapped
+
+
+def snap_to_onsets(sal, notes, window=0.08):
+    """Recale des accords sur l'attaque réelle la plus proche (toutes les notes d'un accord ensemble)."""
+    if not len(sal.onsets):
+        return notes
+    result, shifts = [], {}
     for n in notes:
-        later = starts[starts > n.start + 0.03]
-        following = later[0] if len(later) else math.inf
-        new_group = last_orig is None or n.start - last_orig > 0.03   # sinon : note du même accord
-        nearest = onsets[np.argmin(np.abs(onsets - n.start))]
-        # Pas de recalage qui collerait deux notes successives distinctes (traits rapides)
-        collides = (new_group and last_new is not None and nearest - last_new < 0.085) or following - nearest < 0.085
-        if abs(nearest - n.start) <= window and not collides:
-            moved += abs(nearest - n.start) > 0.02
-            shift = nearest - n.start
-        elif not new_group:
-            shift = last_new - last_orig                     # même décalage que le reste de l'accord
-        else:
-            shift = 0.0
-        if new_group:
-            last_orig, last_new = n.start, n.start + shift
-        snapped.append(type(n)(n.start + shift, max(n.end + shift, n.start + shift + 0.05), n.midi, n.velocity))
-    return snapped, moved
+        key = round(n.start, 2)
+        if key not in shifts:
+            nearest = sal.onsets[np.argmin(np.abs(sal.onsets - n.start))]
+            shifts[key] = nearest - n.start if abs(nearest - n.start) <= window else 0.0
+        shift = shifts[key]
+        result.append(type(n)(n.start + shift, max(n.end + shift, n.start + shift + 0.05), n.midi, n.velocity))
+    return result
 
 
 def _chord_roots(chord_labels):
@@ -301,16 +356,35 @@ def render(music_path, output, cfg: PlatformConfig, progress=lambda done, total:
         from transcribe import Event, Note, group_events
         music_duration = librosa.get_duration(path=music_path)
         span = min(music_duration, cfg.max_duration * speed)
-        log(f"🎼 Transcription Sheet Sage 2 de {span:.0f} s de musique (environ {max(1, round(span * 2 / 60))} min "
-            "la première fois, immédiat ensuite)...")
-        sheet = sheetsage_transcribe(music_path, span)
-        melody = [Note(*n) for n in sheet["melody"]]
-        chord_notes = [Note(s, e, m, v * 0.45) for s, e, m, v in sheet["chords"]]
-        melody, moved = snap_to_onsets(music_path, melody, span)
-        chord_notes, _ = snap_to_onsets(music_path, chord_notes, span)
-        status = "résultat en cache" if sheet.get("cached") else f"transcrit en {sheet.get('elapsed')} s"
+        sheet = None
+        if cfg.score_path:
+            from score_align import load_aligned_score
+            log("📄 Partition fournie : alignement sur l'enregistrement...")
+            aligned = load_aligned_score(cfg.score_path, music_path, span, log=log)
+            if aligned and aligned["cost"] <= cfg.score_max_cost and aligned["match"] >= 0.5 and aligned["melody"]:
+                log(f"   partition utilisée (écart d'alignement {aligned['cost']:.2f}, "
+                    f"{aligned['match']:.0%} des notes retrouvées dans l'audio)")
+                sheet = {**aligned, "chord_labels": [], "source": "partition"}
+                melody, chord_notes = aligned["melody"], aligned["chords"]
+            elif aligned:
+                log(f"   la partition ne correspond pas assez au morceau (écart {aligned['cost']:.2f}, "
+                    f"{aligned['match']:.0%} des notes retrouvées) : transcription automatique")
+        if sheet is None:
+            log(f"🎼 Transcription Sheet Sage 2 de {span:.0f} s de musique (environ {max(1, round(span * 2 / 60))} min "
+                "la première fois, immédiat ensuite)...")
+            sheet = sheetsage_transcribe(music_path, span)
+            melody = [Note(*n) for n in sheet["melody"]]
+            chord_notes = [Note(s, e, m, v * 0.45) for s, e, m, v in sheet["chords"]]
+        log("   vérification de la partition sur l'audio (ordre et moment de chaque note)...")
+        sal = PitchSalience(music_path, span)
+        # Partition : notes justes mais calage plus approximatif (±0,2 s) ; transcription : l'inverse (±0,12 s)
+        melody, moved, swapped = refine_melody(sal, melody, window=0.2 if sheet.get("source") else 0.12,
+                                               min_gap=max(cfg.note_min_gap, 2 / cfg.fps) + 0.015)
+        chord_notes = snap_to_onsets(sal, chord_notes)
+        status = ("partition alignée" if sheet.get("source") else
+                  "résultat en cache" if sheet.get("cached") else f"transcrit en {sheet.get('elapsed')} s")
         log(f"   {status} : tonalité {sheet.get('key', '?')}, {len(melody)} notes de mélodie, "
-            f"{len(sheet['chord_labels'])} accords, {moved} notes recalées sur les attaques")
+            f"{len(sheet['chord_labels']) or len({round(n.start, 1) for n in chord_notes})} accords, {moved} notes recalées, {swapped} paires remises dans l'ordre")
         min_gap = max(cfg.note_min_gap, 2 / cfg.fps) * speed
         events = group_events(melody, min_gap=min_gap)
         roots = _chord_roots(sheet["chord_labels"])
